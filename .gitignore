@@ -1,0 +1,55 @@
+# IMPORTANT: git does NOT support trailing inline comments on a pattern line. The
+# whole line is treated as the pattern. Keep every comment on its own line.
+
+# Credentials. An API key grants read access to patient data, so it is treated
+# like a password and must never be committed under any name.
+# Note the hyphen and underscore spellings are BOTH needed: the file Moveshelf
+# hands you is mvshlf-api-key.json, which "*api_key*" does not match.
+api_key.txt
+api_key.dat
+*api_key*
+*api-key*
+*apikey*
+*.key
+mvshlf-config.json
+
+# The example holiday file is committed; a real one is not.
+!holidays.txt.example
+
+# The setup-guide screenshots are pictures of the Moveshelf interface, not
+# credentials. They collide with the "*api-key*" glob above, which would have
+# silently dropped api-keys.png and left the guide unbuildable from a clone.
+!docs/screenshots/*.png
+
+# Real site details (server paths, contact address) for building the guide.
+# The tracked docs hold placeholders; this fills them in locally.
+docs/site.local.json
+
+# Per-user runtime files written next to the exe. Site-specific, not code.
+settings.json
+therapists.csv
+holidays.txt
+
+# Audit log. Contains no patient identifiers, but it is operational, not source.
+logs/
+
+# Anything captured from the API while developing. Assume it holds PHI.
+fixtures/live/
+*.live.json
+scratch/
+
+# Build output
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db

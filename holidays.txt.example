@@ -1,0 +1,41 @@
+# Extra holidays, and exceptions to the built-in ones.
+#
+# You do NOT need this file. Report Tracker already skips weekends plus nine
+# holidays every year, worked out automatically so they never need updating:
+#
+#     New Year's Day             1 January
+#     Martin Luther King Day     third Monday in January
+#     Memorial Day               last Monday in May
+#     Independence Day           4 July
+#     Labor Day                  first Monday in September
+#     Thanksgiving Day           fourth Thursday in November
+#     Friday after Thanksgiving  the day after
+#     Christmas Eve              24 December
+#     Christmas Day              25 December
+#
+# A holiday falling on a Saturday is taken the Friday before, and one falling on
+# a Sunday the Monday after, matching normal US practice.
+#
+# Christmas Eve and Christmas Day would otherwise land on the same day in about
+# one year in three. Two days are always granted: in 2027 they fall on Thursday
+# 23 and Friday 24 December, and in 2028 on Monday 25 and Tuesday 26 December.
+#
+# Copy this file to holidays.txt next to the app only if you want to change any
+# of that.
+#
+# ADD a day off: one date per line, YYYY-MM-DD. For example, if your site also
+# closes the day before Independence Day in 2026:
+# 2026-07-02
+#
+# REMOVE a built-in holiday your site does not observe: put a minus in front.
+# For example, if you work the Friday after Thanksgiving in 2026:
+# -2026-11-27
+#
+# Good Friday is NOT observed by default. If your site does close, add the date
+# each year, since it moves with Easter:
+# 2026-04-03
+# 2027-03-26
+# 2028-04-14
+#
+# Anything after a "#" is ignored, and a line that does not parse costs only that
+# one line rather than the whole file.

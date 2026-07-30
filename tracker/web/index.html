@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Report Tracker</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<!-- Privacy screen. Covers the page after inactivity so patient data is not
+     left on display at an unattended workstation. -->
+<div id="screen" class="hidden">
+  <div class="big">Hidden for privacy</div>
+  <div class="sub">Your report list is still loaded.</div>
+  <button class="primary" id="reveal">Show my reports</button>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <h1>Report Tracker</h1>
+    <select id="site" aria-label="Site" class="hidden"></select>
+    <span class="spacer"></span>
+    <span class="meta" id="refreshed"></span>
+    <button id="refresh" title="Refresh (r)">&#8635; Refresh</button>
+    <button id="quit">Quit</button>
+  </header>
+
+  <div id="banners"></div>
+
+  <!-- Shown while the first fetch is still running. -->
+  <section id="loading" class="setup hidden">
+    <h2>Loading your reports&hellip;</h2>
+    <p class="sub">Fetching sessions from Moveshelf. This usually takes about
+       15 seconds the first time.</p>
+  </section>
+
+  <!-- Running from a network folder. Refused before anything is written there. -->
+  <section id="setup-location" class="setup hidden">
+    <h2>Please copy the app to your own computer first</h2>
+    <p id="location-error" style="white-space:pre-wrap"></p>
+    <p class="sub">
+      Once it is on your computer, put your <code>mvshlf-api-key.json</code> beside it in
+      the same folder and run it again. Nothing has been saved to the network folder.
+    </p>
+  </section>
+
+  <!-- First run: no API key found. -->
+  <section id="setup-key" class="setup hidden">
+    <h2>Set up your API key</h2>
+    <p>Report Tracker needs its own Moveshelf API key. This takes about a minute.</p>
+    <ol>
+      <li>Log in to Moveshelf, click your picture at the top right, then
+          <b>User settings</b>.</li>
+      <li>Scroll down to <b>API Keys</b>.</li>
+      <li>In the <b>Application ID</b> box type <code>ReportTracker</code>, then click
+          <b>Generate API Key</b>.</li>
+      <li>Save the file Moveshelf gives you into this folder, named
+          <code>mvshlf-api-key.json</code>:
+          <div class="path"><code id="folder"></code></div></li>
+      <li>Click Refresh above.</li>
+    </ol>
+    <p class="sub">
+      Use a dedicated Application ID rather than an existing key, so this one can be
+      revoked on its own later without breaking anything else. The key is a password:
+      it is yours alone, and it should never be emailed, shared, or put on a network drive.
+      You can revoke it at any time from the same screen, with no IT ticket.
+    </p>
+    <p class="sub" id="key-error"></p>
+  </section>
+
+  <!-- First run: key works, but no site chosen yet. -->
+  <section id="setup-site" class="setup hidden">
+    <h2>Choose your site</h2>
+    <p>Your API key gives you access to more than one site. Pick the one you work at.
+       You can change this later from the dropdown at the top.</p>
+    <p><select id="site-picker" aria-label="Choose a site"></select>
+       <button class="primary" id="site-save">Use this site</button></p>
+  </section>
+
+  <!-- Normal view -->
+  <main id="main" class="hidden">
+    <p class="scope" id="scope"></p>
+    <div class="tiles" id="tiles"></div>
+
+    <!-- First run: nothing here knows which therapist is looking. -->
+    <div id="identity" class="filterbar hidden">
+      <span>Which therapist are you?</span>
+      <select id="identity-pick" aria-label="Your name"></select>
+      <button class="primary" id="identity-set" type="button">Show only my sessions</button>
+      <button id="identity-skip" type="button">Not now</button>
+    </div>
+
+    <!-- Appears only while something is filtering the table, so the view never
+         silently looks like a short worklist. -->
+    <div id="activefilters" class="filterbar hidden"></div>
+
+    <div class="controls">
+      <input type="search" id="q" placeholder="Search subject, MRN or therapist…   (press / )"
+             aria-label="Search">
+      <label class="chk"><input type="checkbox" id="mine"> My sessions only</label>
+      <select id="me" aria-label="Which therapist are you?"></select>
+      <input id="me-other" class="hidden" autocomplete="off" spellcheck="false"
+             placeholder="Type a name, then press Enter" aria-label="Type a therapist name">
+      <span class="sub hidden" id="me-note"></span>
+      <label class="chk"><input type="checkbox" id="showdone"> Show completed</label>
+      <label class="chk" title="Reports left unfinished this long are usually finished work whose completion date was never entered in Moveshelf. Separating them keeps the Overdue count to what you can act on this week. Nothing is hidden: the Backlog tile always shows the count.">
+        <input type="checkbox" id="backlog"> Backlog anything over <span id="backlog-days">30</span> business days overdue</label>
+      <select id="referral" aria-label="Filter by referral type">
+        <option value="">All referral types</option>
+      </select>
+      <select id="lookback" aria-label="How far back to look">
+        <option value="30">Last 30 days</option>
+        <option value="90">Last 90 days</option>
+        <option value="180">Last 180 days</option>
+        <option value="365">Last year</option>
+      </select>
+    </div>
+
+    <details id="reportpanel" class="panel">
+      <summary>Which referral types need a PT report?</summary>
+      <p class="sub">
+        Untick a referral type that never produces a report, such as video only or
+        pedobarography. Those sessions move to a &ldquo;No report needed&rdquo; bucket and stop
+        counting as overdue. Anything not listed here still counts, so a new referral
+        type is never silently ignored.
+      </p>
+      <div id="reporttypes"></div>
+    </details>
+
+    <div class="card">
+      <!-- Proxy scrollbar. CSS cannot put a scrollbar at the top of a scroll
+           box, so this is an empty strip that scrolls in step with the table
+           below it. Without it the only scrollbar sits at the bottom of a long
+           table, which means scrolling the whole page down just to move the
+           columns sideways. -->
+      <div class="hbar" id="hbar" aria-hidden="true"><div id="hbar-inner"></div></div>
+      <div class="tablewrap" id="tablewrap">
+      <table id="tbl">
+        <thead><tr>
+          <th data-k="sort_rank">Due</th>
+          <th data-k="subject_id">Subject ID</th>
+          <th data-k="mrn">MRN</th>
+          <th data-k="session_date">Session date</th>
+          <th data-k="days_since_session" class="num" title="Business days between the session and today">Days Since Seen</th>
+          <th data-k="therapist">Therapist</th>
+          <th data-k="referral_type">Referral</th>
+          <th data-k="processing_completed" title="Date data processing was completed. The 7 business day clock starts here.">Processed</th>
+          <th data-k="days_since_processing" class="num" title="Business days between processing being completed and today. The 7 day clock starts here.">Days Since Processed</th>
+          <th data-k="pt_evaluation" title="PT evaluation in EMR">PT eval</th>
+          <th data-k="pdf_to_emr" title="PDF data in EMR">PDF</th>
+          <th data-k="interpretation" title="Interpretation completed">Interp.</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      </div>
+      <div class="empty hidden" id="empty">
+        <div class="big" id="empty-big">&#127881; You&rsquo;re all caught up</div>
+        <div class="sub" id="empty-sub">No reports are due right now. Nice work.</div>
+      </div>
+    </div>
+
+    <footer>
+      <span id="count"></span>
+      <span class="spacer"></span>
+      <span>No export by design. Patient data stays in this window.</span>
+    </footer>
+    <p class="sub" id="holidaynote"></p>
+  </main>
+
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

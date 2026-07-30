@@ -1,0 +1,76 @@
+#!/bin/sh
+# PHI and credential guard.
+#
+# Install with:  git config core.hooksPath hooks
+# Override once with:  git commit --no-verify
+#
+# This catches structured identifiers, not every possible one. Keep captured API
+# responses in the gitignored fixtures/live/ folder.
+#
+# Note on the allowlist below: this project deliberately uses invented names in
+# tests and documentation, because no real staff or patient name belongs in
+# committed source. Those invented names are listed here so the guard stays
+# useful. A hook that fires on every commit teaches people to pass --no-verify,
+# which is worse than having no hook at all. Add to the list only when you are
+# certain a name is fictional.
+
+fail=0
+
+# Text files only. Screenshots of the Moveshelf interface live under
+# docs/screenshots/ and are pictures, not credentials or patient data.
+staged=$(git diff --cached --name-only --diff-filter=ACM \
+  | grep -Ev '^docs/screenshots/' || true)
+
+# 1. Never commit a credential file, whatever it is called.
+cred=$(printf '%s\n' "$staged" \
+  | grep -Ei 'api[_-]?key|\.key$|mvshlf-config\.json' \
+  | grep -Ev '\.(png|jpg|jpeg|gif)$' || true)
+if [ -n "$cred" ]; then
+  echo "Credential guard: staged file looks like an API key or config:"
+  echo "$cred" | sed 's/^/      /'
+  fail=1
+fi
+
+# 2. Never commit per-user runtime files, or real site details.
+runtime=$(printf '%s\n' "$staged" \
+  | grep -Ex 'therapists\.csv|holidays\.txt|settings\.json|docs/site\.local\.json' || true)
+if [ -n "$runtime" ]; then
+  echo "Guard: staged a per-user or site-specific file (ship a .example instead):"
+  echo "$runtime" | sed 's/^/      /'
+  fail=1
+fi
+
+# 3. Scan staged text for patient and staff identifiers.
+files=$(printf '%s\n' "$staged" | grep -Ei '\.(py|md|txt|csv|json|html|js)$' || true)
+
+# Invented names used throughout the tests, the mockup and the docs.
+ALLOW_NAMES='Dawson, Renata|Whitfield, Marlo|Marsden, Delia|Demo, Patient'
+ALLOW_NAMES="$ALLOW_NAMES|Onleave, Alex|Newstarter, Sam|Nobody, Here|Smith, John"
+ALLOW_NAMES="$ALLOW_NAMES|Rodriguez Martinez|Last, First|Graf, Adam"
+# Ordinary code and prose that happens to match "Word, Word".
+ALLOW_CODE='Error, |Any, Dict|List, Optional|Set, Iterable|None, None|Dict, |Optional\]'
+ALLOW_CODE="$ALLOW_CODE|Day, Memorial|Day, Labor|Day, Independence|Thanksgiving, Christmas"
+
+for f in $files; do
+  match=$(git show ":$f" 2>/dev/null \
+    | grep -nE '\b[0-9]{7}\b|"[A-Z][a-z]+, [A-Z][a-z]+"' \
+    | grep -viE "$ALLOW_NAMES" \
+    | grep -vE "$ALLOW_CODE" \
+    | grep -viE '9000[0-9]{3}|1234567' \
+    | head -5)
+  if [ -n "$match" ]; then
+    echo "PHI guard: possible patient or staff identifier in staged  $f"
+    echo "$match" | sed 's/^/      /'
+    fail=1
+  fi
+done
+
+if [ "$fail" -ne 0 ]; then
+  echo ""
+  echo "  Commit blocked."
+  echo "  Fix: remove the identifier or credential, or move it to a gitignored file."
+  echo "  If the name is genuinely fictional, add it to ALLOW_NAMES in hooks/pre-commit."
+  echo "  Genuine one-off false positive?  git commit --no-verify"
+  exit 1
+fi
+exit 0

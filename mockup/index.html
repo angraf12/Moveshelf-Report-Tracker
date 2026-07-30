@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report Tracker (mockup)</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#fff; --ink:#15181d; --muted:#5d6673; --line:#e3e6eb;
+  --overdue:#b3261e; --overdue-bg:#fdecea; --today:#c2540a; --today-bg:#fdf0e4;
+  --soon:#8a6100; --soon-bg:#fdf6e0; --ontrack:#0f6b5c; --ontrack-bg:#e6f4f1;
+  --idle:#5d6673; --idle-bg:#eef0f3; --accent:#0b5fa5;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#111418; --panel:#191d23; --ink:#e8ebf0; --muted:#98a2b3; --line:#2a313a;
+    --overdue:#ff8a80; --overdue-bg:#3a1d1a; --today:#ffb26b; --today-bg:#3a2716;
+    --soon:#ffd873; --soon-bg:#372f14; --ontrack:#5fd3bd; --ontrack-bg:#12302b;
+    --idle:#98a2b3; --idle-bg:#232830; --accent:#79b8ff;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.45 "Segoe UI",system-ui,-apple-system,sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:18px 20px 60px}
+
+.banner{background:#fff3cd;color:#5c4700;border:1px solid #f0d98c;border-radius:8px;
+  padding:8px 12px;font-size:13px;margin-bottom:14px}
+@media (prefers-color-scheme:dark){.banner{background:#3a3016;color:#ffe08a;border-color:#5c4a1c}}
+
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-size:20px;margin:0;letter-spacing:-.2px}
+.spacer{flex:1}
+.meta{color:var(--muted);font-size:13px}
+select,button,input{font:inherit;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:8px;padding:7px 11px}
+button{cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.tile{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--line);
+  border-radius:10px;padding:12px 14px;cursor:pointer;text-align:left;transition:transform .08s}
+.tile:hover{transform:translateY(-2px)}
+.tile[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:1px}
+.tile .n{font-size:30px;font-weight:700;line-height:1.1}
+.tile .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+.t-over{border-left-color:var(--overdue)} .t-over .n{color:var(--overdue)}
+.t-today{border-left-color:var(--today)} .t-today .n{color:var(--today)}
+.t-soon{border-left-color:var(--soon)} .t-soon .n{color:var(--soon)}
+.t-ok{border-left-color:var(--ontrack)} .t-ok .n{color:var(--ontrack)}
+.t-idle{border-left-color:var(--idle)} .t-idle .n{color:var(--idle)}
+
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.controls input[type=search]{flex:1;min-width:200px}
+label.chk{display:flex;gap:6px;align-items:center;font-size:14px;color:var(--muted);cursor:pointer}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:1080px}
+th{position:sticky;top:0;background:var(--panel);text-align:left;padding:10px 12px;
+  border-bottom:2px solid var(--line);font-size:12px;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--muted);cursor:pointer;white-space:nowrap}
+th:hover{color:var(--ink)}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--idle-bg)}
+.status{border-left:5px solid transparent}
+.s-over{border-left-color:var(--overdue)} .s-today{border-left-color:var(--today)}
+.s-soon{border-left-color:var(--soon)} .s-ok{border-left-color:var(--ontrack)}
+.s-idle{border-left-color:var(--idle)} .s-done{border-left-color:var(--ontrack);opacity:.55}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;
+  font-size:12px;font-weight:700;white-space:nowrap}
+.p-over{background:var(--overdue-bg);color:var(--overdue)}
+.p-today{background:var(--today-bg);color:var(--today)}
+.p-soon{background:var(--soon-bg);color:var(--soon)}
+.p-ok{background:var(--ontrack-bg);color:var(--ontrack)}
+.p-idle{background:var(--idle-bg);color:var(--idle)}
+.sub{color:var(--muted);font-size:12px}
+.mono{font-variant-numeric:tabular-nums}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.dash{color:var(--muted)}
+.copy{border:0;background:transparent;color:var(--muted);padding:2px 5px;font-size:12px;border-radius:5px}
+.copy:hover{background:var(--idle-bg);color:var(--accent)}
+.empty{padding:56px 20px;text-align:center}
+.empty .big{font-size:22px;font-weight:700;margin-bottom:6px}
+footer{display:flex;gap:14px;align-items:center;margin-top:12px;font-size:13px;color:var(--muted)}
+footer a{color:var(--accent)}
+.note{margin-top:26px;padding:14px 16px;border:1px dashed var(--line);border-radius:10px;
+  font-size:13px;color:var(--muted)}
+.note b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="banner">
+  <b>MOCKUP for design review.</b> All patient names, MRNs and dates below are invented test data.
+  Nothing here came from Moveshelf.
+</div>
+
+<header>
+  <h1>Report Tracker</h1>
+  <select aria-label="Site"><option>CHI-Gait</option><option>PHL-Gait</option></select>
+  <span class="spacer"></span>
+  <span class="meta">Last refreshed 8:04 AM</span>
+  <button id="refresh">&#8635; Refresh</button>
+  <button class="primary">Quit</button>
+</header>
+
+<div class="tiles" id="tiles">
+  <button class="tile t-over"  data-b="over"  aria-pressed="false"><div class="n">3</div><div class="l">&#9888; Overdue</div></button>
+  <button class="tile t-today" data-b="today" aria-pressed="false"><div class="n">2</div><div class="l">&#9200; Due today</div></button>
+  <button class="tile t-soon"  data-b="soon"  aria-pressed="false"><div class="n">3</div><div class="l">&#8226;&#8226; Due soon</div></button>
+  <button class="tile t-ok"    data-b="ok"    aria-pressed="false"><div class="n">4</div><div class="l">&#10003; On track</div></button>
+  <button class="tile t-idle"  data-b="idle"  aria-pressed="false"><div class="n">3</div><div class="l">&#8943; Not started</div></button>
+</div>
+
+<div class="controls">
+  <input type="search" id="q" placeholder="Search subject, MRN or therapist&hellip;   (press / )">
+  <label class="chk"><input type="checkbox" id="mine"> My sessions only</label>
+  <label class="chk"><input type="checkbox" id="done"> Show completed</label>
+  <select id="look"><option>Last 90 days</option><option>Last 30 days</option><option>Last 180 days</option></select>
+</div>
+
+<div class="card">
+  <table id="tbl">
+    <thead><tr>
+      <th data-k="left">Due &#9650;</th>
+      <th data-k="subject">Subject ID</th>
+      <th data-k="mrn">MRN</th>
+      <th data-k="session">Session date</th>
+      <th data-k="seen" class="num">Days since seen</th>
+      <th data-k="therapist">Therapist</th>
+      <th data-k="proc">Processing done</th>
+      <th data-k="sinceproc" class="num">Days since proc.</th>
+      <th data-k="pt">PT eval in EMR</th>
+      <th data-k="pdf">PDF in EMR</th>
+      <th data-k="interp">Interpretation</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+  <div class="empty" id="empty" hidden>
+    <div class="big">&#127881; You&rsquo;re all caught up</div>
+    <div class="sub">No reports are due right now. Nice work.</div>
+  </div>
+</div>
+
+<footer>
+  <span id="count"></span><span class="spacer"></span>
+  <span>No export by design. Patient data stays in this window.</span>
+</footer>
+
+<div class="note">
+  <b>Interactions to try:</b> click a status tile to filter &middot; click any column header to sort &middot;
+  type in search &middot; toggle &ldquo;Show completed&rdquo; &middot; click a row (it would open that
+  session in Moveshelf) &middot; switch your OS between light and dark mode.<br><br>
+  <b>Note the accessibility rule:</b> every row states its status in words and with a symbol, not by
+  color alone, so the table still reads correctly in grayscale or with a color vision deficiency.<br><br>
+  <b>No export:</b> there is deliberately no CSV or Print button. The only way patient data leaves
+  this app is a person reading the screen.
+</div>
+
+</div>
+<script>
+const ME = "Dawson, Renata";
+// Invented demo rows. left = business days until the 7-day deadline.
+const ROWS = [
+ {left:-4,subject:"Demo, Patient A",mrn:"9000001",session:"2026-07-09",seen:13,therapist:"Dawson, Renata",proc:"2026-07-10",sinceproc:11,pt:"",pdf:"",interp:""},
+ {left:-2,subject:"Demo, Patient B",mrn:"9000002",session:"2026-07-13",seen:11,therapist:"Whitfield, Marlo",proc:"2026-07-14",sinceproc:9,pt:"",pdf:"",interp:"2026-08-04"},
+ {left:-1,subject:"Demo, Patient C",mrn:"9000003",session:"2026-07-14",seen:10,therapist:"Dawson, Renata",proc:"2026-07-15",sinceproc:8,pt:"",pdf:"",interp:""},
+ {left:0, subject:"Demo, Patient D",mrn:"9000004",session:"2026-07-15",seen:9, therapist:"Dawson, Renata",proc:"2026-07-16",sinceproc:7,pt:"",pdf:"",interp:""},
+ {left:0, subject:"Demo, Patient E",mrn:"9000005",session:"2026-07-16",seen:8, therapist:"Marsden, Delia",proc:"2026-07-16",sinceproc:7,pt:"",pdf:"",interp:""},
+ {left:1, subject:"Demo, Patient F",mrn:"9000006",session:"2026-07-17",seen:7, therapist:"Dawson, Renata",proc:"2026-07-17",sinceproc:6,pt:"",pdf:"",interp:"2026-08-18"},
+ {left:2, subject:"Demo, Patient G",mrn:"9000007",session:"2026-07-20",seen:5, therapist:"Whitfield, Marlo",proc:"2026-07-20",sinceproc:5,pt:"",pdf:"",interp:""},
+ {left:2, subject:"Demo, Patient H",mrn:"9000008",session:"2026-07-20",seen:5, therapist:"Dawson, Renata",proc:"2026-07-20",sinceproc:5,pt:"",pdf:"",interp:""},
+ {left:3, subject:"Demo, Patient I",mrn:"9000009",session:"2026-07-21",seen:4, therapist:"Dawson, Renata",proc:"2026-07-21",sinceproc:4,pt:"",pdf:"",interp:""},
+ {left:4, subject:"Demo, Patient J",mrn:"9000010",session:"2026-07-21",seen:4, therapist:"Marsden, Delia",proc:"2026-07-22",sinceproc:3,pt:"",pdf:"",interp:""},
+ {left:5, subject:"Demo, Patient K",mrn:"9000011",session:"2026-07-22",seen:3, therapist:"Dawson, Renata",proc:"2026-07-23",sinceproc:2,pt:"",pdf:"",interp:""},
+ {left:6, subject:"Demo, Patient L",mrn:"9000012",session:"2026-07-24",seen:1, therapist:"Whitfield, Marlo",proc:"2026-07-24",sinceproc:1,pt:"",pdf:"",interp:""},
+ {left:null,subject:"Demo, Patient M",mrn:"9000013",session:"2026-07-24",seen:1,therapist:"Dawson, Renata",proc:"",sinceproc:null,pt:"",pdf:"",interp:""},
+ {left:null,subject:"Demo, Patient N",mrn:"9000014",session:"2026-07-27",seen:0,therapist:"Dawson, Renata",proc:"",sinceproc:null,pt:"",pdf:"",interp:""},
+ {left:null,subject:"Demo, Patient O",mrn:"9000015",session:"2026-07-27",seen:0,therapist:"Marsden, Delia",proc:"",sinceproc:null,pt:"",pdf:"",interp:""},
+ {left:3, subject:"Demo, Patient P",mrn:"9000016",session:"2026-07-16",seen:8, therapist:"Dawson, Renata",proc:"2026-07-17",sinceproc:6,pt:"2026-07-22",pdf:"2026-07-22",interp:""},
+ {left:5, subject:"Demo, Patient Q",mrn:"9000017",session:"2026-07-13",seen:11,therapist:"Whitfield, Marlo",proc:"2026-07-14",sinceproc:9,pt:"2026-07-16",pdf:"2026-07-16",interp:"2026-07-21"},
+];
+
+const WD=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+function bucket(r){
+  if(r.pt) return "done";
+  if(r.left===null) return "idle";
+  if(r.left<0) return "over";
+  if(r.left===0) return "today";
+  if(r.left<=2) return "soon";
+  return "ok";
+}
+function phrase(r){
+  const b=bucket(r);
+  if(b==="done") return {cls:"p-ok",   txt:"✓ Done"};
+  if(b==="idle") return {cls:"p-idle", txt:"⋯ Not started"};
+  if(b==="over"){const n=Math.abs(r.left);return{cls:"p-over",txt:"⚠ "+n+" day"+(n>1?"s":"")+" overdue"};}
+  if(b==="today")return {cls:"p-today",txt:"⏰ Due today"};
+  // due date = today + left business days (today is Mon 2026-07-27 in this mockup)
+  const d=new Date(2026,6,27); let k=r.left;
+  while(k>0){d.setDate(d.getDate()+1); if(d.getDay()!==0&&d.getDay()!==6) k--;}
+  const day=WD[d.getDay()];
+  return {cls:b==="soon"?"p-soon":"p-ok", txt:(b==="soon"?"•• ":"✓ ")+r.left+" left, due "+day};
+}
+let sortKey="left", sortDir=1, filter=null;
+const tb=document.querySelector("#tbl tbody"), empty=document.getElementById("empty");
+
+function render(){
+  const q=document.getElementById("q").value.trim().toLowerCase();
+  const mine=document.getElementById("mine").checked;
+  const showDone=document.getElementById("done").checked;
+  let rows=ROWS.filter(r=>{
+    if(bucket(r)==="done" && !showDone) return false;
+    if(filter && bucket(r)!==filter) return false;
+    if(mine && r.therapist!==ME) return false;
+    if(q && !(r.subject+" "+r.mrn+" "+r.therapist).toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const ORDER={over:0,today:1,soon:2,ok:3,idle:4,done:5};
+  rows.sort((a,b)=>{
+    let x,y;
+    if(sortKey==="left"){ x=[ORDER[bucket(a)],a.left??99]; y=[ORDER[bucket(b)],b.left??99];
+      const c=(x[0]-y[0])||(x[1]-y[1])||(a.session<b.session?-1:1); return c*sortDir; }
+    x=a[sortKey]??""; y=b[sortKey]??"";
+    if(typeof x==="number"||typeof y==="number") return ((x||0)-(y||0))*sortDir;
+    return String(x).localeCompare(String(y))*sortDir;
+  });
+  tb.innerHTML=rows.map(r=>{
+    const b=bucket(r), p=phrase(r);
+    const d=v=>v?`<span class="mono">${v}</span>`:`<span class="dash">&mdash;</span>`;
+    return `<tr class="status s-${b}" title="Click to open this session in Moveshelf">
+      <td><span class="pill ${p.cls}">${p.txt}</span></td>
+      <td><b>${r.subject}</b></td>
+      <td class="mono">${r.mrn} <button class="copy" title="Copy MRN">&#128203;</button></td>
+      <td class="mono">${r.session}<div class="sub">${r.seen} business day${r.seen===1?"":"s"} ago</div></td>
+      <td class="num">${r.seen}</td>
+      <td>${r.therapist}${r.therapist===ME?' <span class="sub">(you)</span>':""}</td>
+      <td>${d(r.proc)}</td>
+      <td class="num">${r.sinceproc===null?'<span class="dash">&mdash;</span>':r.sinceproc}</td>
+      <td>${d(r.pt)}</td>
+      <td>${d(r.pdf)}</td>
+      <td>${d(r.interp)}</td>
+    </tr>`;}).join("");
+  empty.hidden = rows.length>0;
+  document.getElementById("count").textContent =
+    rows.length+" of "+ROWS.length+" sessions shown"+(filter?" · filtered":"");
+}
+document.querySelectorAll("#tiles .tile").forEach(t=>t.onclick=()=>{
+  const b=t.dataset.b; filter = (filter===b)?null:b;
+  document.querySelectorAll("#tiles .tile").forEach(o=>o.setAttribute("aria-pressed",String(o.dataset.b===filter)));
+  if(filter==="done") document.getElementById("done").checked=true;
+  render();
+});
+document.querySelectorAll("#tbl th").forEach(th=>th.onclick=()=>{
+  const k=th.dataset.k; sortDir = (k===sortKey)? -sortDir : 1; sortKey=k;
+  document.querySelectorAll("#tbl th").forEach(o=>o.textContent=o.textContent.replace(/ [▲▼]$/,""));
+  th.textContent += sortDir>0?" ▲":" ▼";
+  render();
+});
+["q","mine","done"].forEach(id=>document.getElementById(id).oninput=render);
+document.getElementById("refresh").onclick=()=>{
+  const m=document.querySelector(".meta"); m.textContent="Refreshing…";
+  setTimeout(()=>m.textContent="Last refreshed just now",600);
+};
+document.addEventListener("keydown",e=>{
+  if(e.key==="/"&&document.activeElement.id!=="q"){e.preventDefault();document.getElementById("q").focus();}
+  if(e.key==="Escape"){filter=null;document.getElementById("q").value="";
+    document.querySelectorAll("#tiles .tile").forEach(o=>o.setAttribute("aria-pressed","false"));render();}
+});
+render();
+</script>
+</body>
+</html>

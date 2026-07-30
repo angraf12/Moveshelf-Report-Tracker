@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Report Tracker: Setup Guide</title>
+<style>
+  :root{ --ink:#1a1d21; --muted:#5d6673; --line:#dfe3e8; --accent:#0b5fa5;
+         --warn-bg:#fff3cd; --warn-line:#e0c56a; --warn-ink:#5c4700;
+         --stop-bg:#fdecea; --stop-line:#e5a49d; --stop-ink:#8c1d13;
+         --ok-bg:#e8f4f0; --ok-line:#9fcbbd; --ok-ink:#0f5c4c; }
+  *{box-sizing:border-box}
+  body{margin:0;background:#f6f7f9;color:var(--ink);
+       font:16px/1.6 "Segoe UI",system-ui,-apple-system,sans-serif}
+  .page{max-width:820px;margin:0 auto;padding:36px 28px 80px;background:#fff;
+        box-shadow:0 0 0 1px var(--line)}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:-.4px}
+  .lede{color:var(--muted);font-size:17px;margin:0 0 28px}
+  h2{font-size:21px;margin:38px 0 10px;padding-top:16px;border-top:2px solid var(--line)}
+  h3{font-size:17px;margin:24px 0 8px}
+  code{background:#eef0f3;padding:2px 6px;border-radius:4px;
+       font-family:Consolas,"Courier New",monospace;font-size:14px;
+       word-break:break-all}
+  .path{display:block;background:#eef0f3;border-left:4px solid var(--accent);
+        padding:10px 12px;margin:10px 0;font-family:Consolas,monospace;
+        font-size:14px;word-break:break-all}
+  ol,ul{padding-left:24px} li{margin:7px 0}
+  .box{border-radius:8px;padding:14px 18px;margin:18px 0;border:1px solid}
+  .stop{background:var(--stop-bg);border-color:var(--stop-line);color:var(--stop-ink)}
+  .warn{background:var(--warn-bg);border-color:var(--warn-line);color:var(--warn-ink)}
+  .ok{background:var(--ok-bg);border-color:var(--ok-line);color:var(--ok-ink)}
+  .box p:first-child{margin-top:0} .box p:last-child{margin-bottom:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:15px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#f2f4f7;font-size:13px;text-transform:uppercase;letter-spacing:.5px;
+     color:var(--muted)}
+  .step{background:var(--accent);color:#fff;border-radius:50%;display:inline-block;
+        width:28px;height:28px;line-height:28px;text-align:center;font-weight:700;
+        margin-right:8px;font-size:15px}
+  .q{font-weight:600;margin:16px 0 2px}
+  .a{margin:0 0 12px;color:#2b3138}
+  footer{margin-top:44px;padding-top:16px;border-top:2px solid var(--line);
+         color:var(--muted);font-size:14px}
+  /* Picture of the two bars, so nobody has to interpret "top right corner". */
+  .mock{border:1px solid #c9ced6;border-radius:8px;overflow:hidden;margin:14px 0 6px;
+        font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .mock .bar{display:flex;align-items:center;gap:14px;padding:9px 12px}
+  .mock .browser{background:#dfe3ea;color:#4a5260;border-bottom:1px solid #c9ced6}
+  .mock .site{background:#22b0e6;color:#fff;font-weight:600;letter-spacing:.4px}
+  .mock .grow{flex:1}
+  .mock .tab{background:#fff;border-radius:6px 6px 0 0;padding:4px 12px;color:#22303f}
+  .mock .addr{background:#fff;border-radius:12px;padding:4px 14px;color:#5a6473;flex:1;
+              max-width:280px;overflow:hidden;white-space:nowrap}
+  .dot{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;
+       justify-content:center;font-weight:700;font-size:12px;flex:none}
+  .dot.no{background:#7a8494;color:#fff;outline:3px solid #c62828;outline-offset:2px}
+  .dot.yes{background:#e23b2e;color:#fff;outline:3px solid #1c7c3f;outline-offset:2px}
+  .legend{display:flex;gap:10px;align-items:flex-start;margin:8px 0;font-size:14px}
+  .legend .mark{font-weight:800;font-size:17px;flex:none;width:22px;text-align:center}
+  .legend .no{color:#c62828} .legend .yes{color:#1c7c3f}
+  /* Screenshot slots. An empty one is deliberately loud, so a guide that went
+     out unfinished is obvious at a glance. */
+  .shot{margin:14px 0}
+  .shot img{max-width:100%;border:1px solid #c9ced6;border-radius:6px;
+            box-shadow:0 2px 8px rgba(0,0,0,.12);display:block}
+  .shot figcaption{font-size:13.5px;color:var(--muted);margin-top:6px}
+  .shot.empty{border:2px dashed #c0392b;border-radius:8px;padding:22px;
+              text-align:center;color:#c0392b;background:#fdf3f2;font-weight:600}
+  @media print{
+    body{background:#fff} .page{box-shadow:none;max-width:none;padding:0}
+    h2{page-break-after:avoid} .box,table{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Report Tracker</h1>
+<p class="lede">See which of your gait reports are due, and by when. Setup takes about
+five minutes and you only do it once.</p>
+
+<p>You have <strong>7 business days</strong> from the date processing is completed to
+finish your report. Report Tracker reads your sessions from Moveshelf and shows a
+countdown for each one, so nothing slips past unnoticed.</p>
+
+<p>It only ever <strong>reads</strong>. It never changes anything in Moveshelf.</p>
+
+<div class="box stop">
+  <p><strong>Read this before you start.</strong> Do not run the app straight from a
+  network folder. Copy the folder to your Desktop first, as described in Step 1.</p>
+  <p>Everything the app saves, including your Moveshelf key, goes into the folder the app
+  is sitting in. If that folder is on a network drive, your key ends up somewhere your
+  colleagues can open. The app refuses to run from a network folder for this reason, but
+  it is easier to just start in the right place.</p>
+</div>
+
+
+<h2><span class="step">1</span>Copy the folder to your Desktop</h2>
+
+<ol>
+  <li>Open this folder:
+    <span class="path">{{APP_FOLDER}}</span>
+    The easiest way is to copy that line, press <code>Windows key + R</code>, paste it
+    in and press Enter.</li>
+  <li><strong>Copy the whole folder</strong> to your <strong>Desktop</strong>. Click it
+    once, press <code>Ctrl + C</code>, then click your Desktop and press
+    <code>Ctrl + V</code>.</li>
+</ol>
+
+<p>That is the whole download. There is nothing to install and no administrator rights
+are needed.</p>
+
+<div class="box warn">
+  <p><strong>Work from your copy, not from the original folder.</strong> Everything the app
+  saves, including your Moveshelf key, goes into the folder it is sitting in. On a
+  network drive that would put your key where colleagues can open it, so the app simply
+  refuses to run from there.</p>
+</div>
+
+<h2><span class="step">2</span>Create your Moveshelf API key</h2>
+
+<p>An API key is how the app proves to Moveshelf that it is you. You create your own. It
+takes under a minute, and you only do it once.</p>
+
+<p>Follow these exactly:</p>
+
+<ol>
+  <li>Log in to <strong>Moveshelf</strong> in your web browser, as you normally would.</li>
+  <li>Click the round <strong>profile symbol on the blue Moveshelf bar</strong>, just to
+    the right of the word <strong>HELP</strong> and the little bell. See the picture
+    below: there are two round buttons near the top right of your screen, and you need
+    the lower one.</li>
+  <li>A small menu drops down. Click <strong>SETTINGS</strong>.</li>
+  <li><strong>Check you are in the right place.</strong> The page should now be titled
+    <strong>User settings</strong>, with your name and email on it. If you got a menu
+    about your browser, favourites or passwords instead, you clicked the wrong button:
+    go back and use the one on the blue bar.</li>
+  <li>Scroll down that page until you see the <strong>API Keys</strong> box.</li>
+  <li>Click in the box labelled <strong>Application ID*</strong> and type exactly:
+    <code>ReportTracker</code></li>
+  <li>Click the blue <strong>Generate API Key</strong> button.</li>
+  <li>Click <strong>Download Key</strong>. <em>This is the step people miss.</em> Nothing
+    is saved until you click it.</li>
+  <li>The file lands in your <strong>Downloads</strong> folder. Open Downloads, find the
+    file that has just appeared, and <strong>move it into the Report Tracker folder on your
+    Desktop</strong>, so it sits right next to
+    <code>MoveshelfReportTracker.exe</code>.</li>
+</ol>
+
+<div class="box stop">
+  <p><strong>Careful: there are two round buttons, one above the other.</strong> Your web
+  browser has its own profile button in the very top corner of the window, and it sits
+  almost directly above the Moveshelf one. Clicking it opens your browser's settings,
+  not Moveshelf's.</p>
+
+  <div class="mock">
+    <div class="bar browser">
+      <span class="tab">Moveshelf</span>
+      <span class="addr">shriners.moveshelf.com</span>
+      <span class="grow"></span>
+      <span class="dot no">A</span>
+      <span>&#8942;</span>
+    </div>
+    <div class="bar site">
+      <span>&#9632; MOVESHELF</span>
+      <span class="grow"></span>
+      <span>DASHBOARD</span>
+      <span>HELP</span>
+      <span>&#128276;</span>
+      <span class="dot yes">&#9670;</span>
+      <span>&#9662;</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="mark no">&#10007;</span>
+    <span><strong>Grey bar at the very top: not this one.</strong> That is your web
+    browser's own button, alongside the address bar. In Microsoft Edge it is often a
+    small circle with a letter or your photo.</span>
+  </div>
+  <!-- SCREENSHOT SLOT: profile-menu -->
+  <figure class="shot empty" id="shot-profile-menu">
+    Screenshot goes here: the Moveshelf bar with the profile menu open, showing SETTINGS
+  </figure>
+
+  <div class="legend">
+    <span class="mark yes">&#10003;</span>
+    <span><strong>Blue bar just below: this is the one.</strong> It is part of the
+    Moveshelf page, at the far right, after DASHBOARD, HELP and the bell. It is a small
+    round coloured pattern, and <em>it looks different for every person</em>, so do not
+    worry if yours does not match anyone else's.</span>
+  </div>
+</div>
+
+<div class="box ok">
+  <p><strong>How to move the file.</strong> Open your Downloads folder, click once on the
+  key file, press <strong>Ctrl + X</strong> to cut it, then open the Report Tracker
+  folder on your Desktop and press <strong>Ctrl + V</strong> to paste it
+  in. You can also just drag it across if you have both windows open.</p>
+</div>
+
+<!-- SCREENSHOT SLOT: api-keys -->
+<figure class="shot empty" id="shot-api-keys">
+  Screenshot goes here: the User settings page showing the API Keys panel
+</figure>
+
+<div class="box warn">
+  <p><strong>Three things people get wrong here.</strong></p>
+  <ul>
+    <li><strong>Do not skip Download Key.</strong> Generating the key shows it on screen;
+      downloading it is what actually saves the file the app needs.</li>
+    <li><strong>The Application ID is not the key.</strong> <code>ReportTracker</code> is
+      just a label you type in so you can recognise this key later. Do not copy it
+      anywhere else.</li>
+    <li><strong>Leave the file name alone.</strong> Whatever Moveshelf calls it, do not
+      rename it. If the app cannot find it, rename it to
+      <code>mvshlf-api-key.json</code>.</li>
+  </ul>
+</div>
+
+<div class="box stop">
+  <p><strong>Your key is a password.</strong> It can read patient information. Do not
+  email it, do not share it, and do not put it on a network drive. One key per person.</p>
+  <p>You can switch it off at any time: go back to the same <strong>Settings</strong>
+  page, find <code>ReportTracker</code> in the list, and click the bin icon beside it.
+  It stops working immediately and needs no IT ticket. Do this if you think anyone else
+  has seen it, or when you change roles.</p>
+</div>
+
+<h2><span class="step">3</span>Run it</h2>
+
+<p>The folder on your Desktop should now contain the key file alongside the app:</p>
+<span class="path">MoveshelfReportTracker.exe
+mvshlf-api-key.json
+Setup Guide.html
+READ ME FIRST.txt</span>
+
+<p>Double-click <strong>MoveshelfReportTracker.exe</strong>. A black window opens, and
+your web browser follows a few seconds later. The first load takes about 15 seconds while
+it fetches your sessions.</p>
+
+<div class="box warn">
+  <p><strong>Choose your site carefully.</strong> If your key gives you access to more
+  than one, the app asks which one you work at.</p>
+  <p>Pick the <strong>Gait</strong> site for your location, for example
+  <code>shriners/CHI-Gait</code> for Chicago or <code>shriners/PHL-Gait</code> for
+  Philadelphia. The app preselects a Gait site for you, so usually you can just click
+  <strong>Use this site</strong>.</p>
+  <p>Choosing a Sports site, or another location, gives you an empty or wrong list with no
+  obvious reason why. If your list looks wrong, change the site using the dropdown at the
+  top left, beside the app name.</p>
+</div>
+
+<p>It also asks which therapist you are, so it can show you your own work. You can change
+that later with the <strong>My sessions only</strong> tick box.</p>
+
+<div class="box ok">
+  <p><strong>Where the list of names comes from.</strong> It is not a staff list. It is
+  built from the therapist recorded on the sessions themselves, for your site and the date
+  range you are looking at.</p>
+  <p>So if you have had no sessions in the last 90 days, your name will not be in the
+  list. You can simply <strong>type it in</strong>, or widen the date range using the
+  dropdown on the right.</p>
+  <p>If some sessions at your site have no therapist recorded, the list also offers
+  <strong>(no therapist recorded)</strong> so those can still be found. They belong to
+  nobody until someone fills the field in on Moveshelf.</p>
+</div>
+
+<div class="box warn">
+  <p><strong>Windows will probably warn you the first time.</strong> You may see
+  "Windows protected your PC" or "unknown publisher". This is expected: the app is built
+  in-house and is not signed by a commercial certificate authority.</p>
+  <p>Click <strong>More info</strong>, then <strong>Run anyway</strong>.</p>
+  <p>If there is no "Run anyway" option, your computer is configured to block unsigned
+  programs and IT will need to approve it. Contact the person named at the bottom of this
+  page.</p>
+</div>
+
+<div class="box ok">
+  <p><strong>To close it:</strong> click <strong>Quit</strong> in the browser page, or
+  close the black window. To use it again another day, double-click the
+  <code>.exe</code> again. Make a desktop shortcut if you want it one click away.</p>
+  <p>Do not bookmark the browser address. It changes every time you run the app, for
+  security reasons. Always start from the <code>.exe</code>.</p>
+</div>
+
+
+<h2>Using it day to day</h2>
+
+<h3>The tiles across the top</h3>
+<p>Click any tile to show only those sessions. Hover over one to read what it means.</p>
+<p>The line just above the tiles always says <strong>whose</strong> numbers they are. With
+<strong>My sessions only</strong> ticked they count just your work; otherwise they count
+every therapist at your site.</p>
+
+<table>
+  <tr><th>Tile</th><th>What it means</th></tr>
+  <tr><td><strong>Overdue</strong></td><td>Past the 7 business day deadline.</td></tr>
+  <tr><td><strong>Due today</strong></td><td>The 7 business days run out today.</td></tr>
+  <tr><td><strong>Due soon</strong></td><td>Two business days or fewer left.</td></tr>
+  <tr><td><strong>On track</strong></td><td>Three or more business days left.</td></tr>
+  <tr><td><strong>Awaiting processing</strong></td><td>Data processing is not finished, so
+    your clock has not started. Nothing for you to do yet.</td></tr>
+  <tr><td><strong>No report</strong></td><td>This referral type does not produce a PT
+    report, so no deadline applies.</td></tr>
+  <tr><td><strong>Backlog</strong></td><td>More than 30 business days past due. Usually
+    finished work whose completion date was never entered.</td></tr>
+</table>
+
+<div class="box warn">
+  <p><strong>Two things the app cannot know.</strong> Moveshelf records only when
+  milestones are <em>completed</em>, never that a report is <em>in progress</em>. So
+  "On track" means time remains, not that anyone has started writing.</p>
+  <p>And a report only counts as finished once its <strong>PT evaluation date</strong> is
+  filled in. If you did the work but never entered the date, the app still shows it as
+  outstanding.</p>
+</div>
+
+<h3>Getting back to the full list</h3>
+<p>When you filter, an amber bar appears saying <strong>Showing a filtered list</strong>.
+Click <strong>Clear filters</strong> at the right of that bar, press <strong>Esc</strong>,
+or click the highlighted tile again. The Refresh button does not clear filters; it fetches
+newer data from Moveshelf.</p>
+
+<h3>Everything else</h3>
+<ul>
+  <li><strong>Click any row</strong> to open that session in Moveshelf. This is the
+    quickest way to go and fix something.</li>
+  <li><strong>Click the patient's name</strong> to open that patient instead, with all
+    of their sessions rather than just this one. Handy when you need history from
+    further back than the date range you are looking at.</li>
+  <li><strong>The small button beside an MRN</strong> copies it, ready to paste into the
+    EMR.</li>
+  <li><strong>My sessions only</strong> narrows the list to your own work.</li>
+  <li><strong>Search</strong> matches subject, MRN or therapist. Press <code>/</code> to
+    jump straight to the box.</li>
+  <li><strong>Sort</strong> by clicking any column heading.</li>
+  <li><strong>Refresh</strong> re-fetches from Moveshelf. Press <code>r</code>.</li>
+</ul>
+
+<h3>How the deadline is counted</h3>
+<p>Business days are Monday to Friday, minus these nine holidays, which the app works out
+for every year on its own:</p>
+<p>New Year's Day, Martin Luther King Day, Memorial Day, Independence Day, Labor Day,
+Thanksgiving, the Friday after Thanksgiving, Christmas Eve and Christmas Day.</p>
+<p>A holiday falling at a weekend counts on the weekday it is observed: Saturday moves to
+the Friday before, Sunday to the Monday after.</p>
+
+
+<h2>If something goes wrong</h2>
+
+<p class="q">Windows blocked the app.</p>
+<p class="a">See Step 3 above. If "Run anyway" is not offered, IT has blocked unsigned
+programs on your machine and will need to approve it.</p>
+
+<p class="q">It says to copy the app to my own computer first.</p>
+<p class="a">You are running it from a network folder. Copy the folder to your
+Desktop and run it from there. Nothing has been saved to the network folder.</p>
+
+<p class="q">Nothing happened when I double-clicked it.</p>
+<p class="a">Look at the black window for a message. If it closed instantly, the message
+scrolled past: contact the person below.</p>
+
+<p class="q">It says "No API key found".</p>
+<p class="a">The app tells you exactly which folder it looked in. Make sure your key file
+is in that same folder and is named <code>mvshlf-api-key.json</code>.</p>
+
+<p class="q">It says my key is not valid.</p>
+<p class="a">You almost certainly saved the Application ID instead of the key, or missed
+the <strong>Download Key</strong> button. Go back to Step 2 and follow it through to the
+end.</p>
+
+<p class="q">I clicked my profile picture and got browser settings, not Moveshelf.</p>
+<p class="a">You clicked your web browser's own profile button, in the grey bar at the
+very top of the window. The one you want is a little lower down, on the blue Moveshelf
+bar, to the right of HELP. See the picture in Step 2. You are in the right place when the
+page is titled <strong>User settings</strong>.</p>
+
+<p class="q">The list is empty, or shows patients I do not recognise.</p>
+<p class="a">You are probably on the wrong site. Use the dropdown at the top left, beside
+the app name, and choose the <strong>Gait</strong> site for your location.</p>
+
+<p class="q">My name is not in the therapist list.</p>
+<p class="a">The list is built from what is recorded on the sessions themselves. If your
+name is spelled more than one way in Moveshelf, open <code>therapists.csv</code> in your
+app folder: it lists every spelling found, and giving two rows the same
+<code>canonical_name</code> merges them.</p>
+
+<p class="q">A session I expected is missing.</p>
+<p class="a">Check the date range dropdown, which starts at the last 90 days. Then check
+whether its referral type has been switched off under <strong>Which referral types need a
+PT report?</strong></p>
+
+<p class="q">It says the counts are out of date.</p>
+<p class="a">You left the tab open past midnight. It refreshes itself; the message is
+there so you never mistake yesterday's countdown for today's.</p>
+
+
+<h2>What the app does with your information</h2>
+<ul>
+  <li>It <strong>only reads</strong> from Moveshelf and never writes anything back.</li>
+  <li>It runs <strong>entirely on your own computer</strong>. The page is served from your
+    machine and cannot be reached from the network.</li>
+  <li><strong>Patient data is never saved to disk.</strong> It exists only in memory while
+    the app is running.</li>
+  <li><strong>There is no export.</strong> No spreadsheet, no print button. The only way
+    information leaves the app is you reading the screen. This is deliberate.</li>
+  <li>Your key is <strong>encrypted after the first successful run</strong>, so that only
+    your Windows account on that computer can read it, and the plain copy is deleted.</li>
+  <li>A log records <em>that</em> data was fetched, with no patient details in it.</li>
+  <li>The page <strong>hides itself</strong> after a few minutes of inactivity, and the app
+    shuts down on its own once you close the browser tab.</li>
+</ul>
+
+
+<footer>
+  <p><strong>Questions, or the app will not start?</strong> {{CONTACT}}</p>
+  <p>Report Tracker version 0.1.0. This guide was last updated on 28 July 2026.</p>
+</footer>
+
+</div>
+</body>
+</html>

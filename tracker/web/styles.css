@@ -1,0 +1,207 @@
+/* Report Tracker styles.
+
+   Color rules, from PLAN.md section 7 and not negotiable in a clinical tool:
+   status is always carried by text and a symbol as well as color, so the table
+   reads correctly in grayscale and with any color vision deficiency, and red
+   versus green is never the only difference between two states. */
+
+:root{
+  --bg:#f6f7f9; --panel:#fff; --ink:#15181d; --muted:#5d6673; --line:#e3e6eb;
+  --overdue:#b3261e; --overdue-bg:#fdecea; --today:#c2540a; --today-bg:#fdf0e4;
+  --soon:#8a6100;  --soon-bg:#fdf6e0;  --ontrack:#0f6b5c; --ontrack-bg:#e6f4f1;
+  --idle:#5d6673;  --idle-bg:#eef0f3;  --accent:#0b5fa5;  --warn-bg:#fff3cd;
+  --warn-ink:#5c4700; --warn-line:#f0d98c;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#111418; --panel:#191d23; --ink:#e8ebf0; --muted:#98a2b3; --line:#2a313a;
+    --overdue:#ff8a80; --overdue-bg:#3a1d1a; --today:#ffb26b; --today-bg:#3a2716;
+    --soon:#ffd873;  --soon-bg:#372f14;  --ontrack:#5fd3bd; --ontrack-bg:#12302b;
+    --idle:#98a2b3;  --idle-bg:#232830;  --accent:#79b8ff;  --warn-bg:#3a3016;
+    --warn-ink:#ffe08a; --warn-line:#5c4a1c;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.45 "Segoe UI",system-ui,-apple-system,sans-serif}
+/* Use the whole window. The table is wide and every capped pixel is a column
+   the user has to scroll to reach. */
+.wrap{max-width:none;margin:0 auto;padding:18px 18px 60px}
+.spacer{flex:1}
+.hidden{display:none !important}
+
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-size:20px;margin:0;letter-spacing:-.2px}
+h2{font-size:17px;margin:0 0 10px}
+.meta{color:var(--muted);font-size:13px}
+
+select,button,input{font:inherit;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:8px;padding:7px 11px}
+button{cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,
+.tile:focus-visible,tbody tr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.primary:hover{filter:brightness(1.08)}
+button[disabled]{opacity:.55;cursor:default}
+
+.banner{border-radius:8px;padding:10px 13px;font-size:13.5px;margin-bottom:14px;
+  background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--warn-line)}
+.banner.error{background:var(--overdue-bg);color:var(--overdue);border-color:var(--overdue)}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));
+  gap:10px;margin-bottom:16px}
+.tile{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--line);
+  border-radius:10px;padding:12px 14px;cursor:pointer;text-align:left;
+  transition:transform .08s,box-shadow .08s}
+.tile:hover{transform:translateY(-2px);box-shadow:0 3px 10px rgba(0,0,0,.08)}
+.tile[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:1px}
+.tile .n{font-size:30px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+/* "Awaiting processing" is longer than the other labels, so allow a second
+   line rather than clipping it. Grid items stretch, so the tiles stay level. */
+.tile .l{font-size:12px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.6px;font-weight:600;line-height:1.25}
+.t-overdue{border-left-color:var(--overdue)}    .t-overdue .n{color:var(--overdue)}
+.t-due_today{border-left-color:var(--today)}    .t-due_today .n{color:var(--today)}
+.t-due_soon{border-left-color:var(--soon)}      .t-due_soon .n{color:var(--soon)}
+.t-on_track{border-left-color:var(--ontrack)}   .t-on_track .n{color:var(--ontrack)}
+.t-not_started{border-left-color:var(--idle)}   .t-not_started .n{color:var(--idle)}
+.t-backlog{border-left-color:var(--idle)}       .t-backlog .n{color:var(--idle)}
+.t-no_report{border-left-color:var(--idle)}     .t-no_report .n{color:var(--idle)}
+
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.controls input[type=search]{flex:1;min-width:190px}
+label.chk{display:flex;gap:6px;align-items:center;font-size:14px;
+  color:var(--muted);cursor:pointer;white-space:nowrap}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  max-width:100%;overflow:visible}
+
+/* The table scrolls inside this box rather than scrolling the whole page.
+   Two reasons: the sticky column headers only stick to their own scroll
+   container, so with page-level scrolling they slid away and you lost track of
+   which column was which; and the tiles and filter controls stay put instead of
+   disappearing upward. */
+.tablewrap{overflow:auto;max-width:100%;
+  max-height:calc(100vh - 330px);min-height:260px}
+
+/* ...and this strip above it drives that scroll, so the control is reachable
+   without scrolling to the bottom of the page first. It is hidden entirely when
+   the table already fits. */
+/* The strip is sticky so it stays reachable at the top of the window rather
+   than scrolling out of view with the rest of the page. Its height must clear a
+   Windows scrollbar (15-17px) or the scrollbar is clipped and looks missing. */
+.hbar{overflow-x:auto;overflow-y:hidden;height:18px;
+  position:sticky;top:0;z-index:3;background:var(--panel);
+  border-bottom:1px solid var(--line);border-radius:10px 10px 0 0}
+.hbar > div{height:1px}
+.hbar.hidden{display:none}
+
+/* Styling the scrollbar at all forces Chromium to use the classic, always
+   visible, space-taking one. Left unstyled it renders as an overlay that fades
+   out, so the strip reads as an empty grey band. */
+.hbar::-webkit-scrollbar{height:12px}
+.hbar::-webkit-scrollbar-track{background:var(--idle-bg);border-radius:6px}
+.hbar::-webkit-scrollbar-thumb{background:var(--muted);border-radius:6px;
+  border:2px solid var(--panel)}
+.hbar::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+.hbar{scrollbar-color:var(--muted) var(--idle-bg)}
+table{border-collapse:collapse;font-size:14px;width:max-content;min-width:100%}
+th{position:sticky;top:0;z-index:1;background:var(--panel);text-align:left;
+  padding:10px 7px;border-bottom:2px solid var(--line);font-size:12px;
+  text-transform:uppercase;letter-spacing:.5px;color:var(--muted);
+  cursor:pointer;white-space:nowrap;user-select:none}
+th:hover{color:var(--ink)}
+/* Let the two count headings wrap onto a second line. Spelled out in full they
+   are much clearer, and wrapping keeps the columns themselves narrow so the
+   whole table still fits on a laptop screen without scrolling. */
+th.num{white-space:normal;max-width:82px}
+
+/* Says whose numbers the tiles are showing. */
+.scope{margin:0 0 8px;font-size:13.5px;color:var(--muted)}
+.scope b{color:var(--ink)}
+td{padding:9px 7px;border-bottom:1px solid var(--line);vertical-align:middle;
+  white-space:nowrap}
+/* Referral type repeats on nearly every row and is long. Truncate it and put
+   the full value in a tooltip rather than spending 180px on it. */
+td.ellipsis{max-width:150px;overflow:hidden;text-overflow:ellipsis}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--idle-bg)}
+.status{border-left:5px solid transparent}
+.s-overdue{border-left-color:var(--overdue)}   .s-due_today{border-left-color:var(--today)}
+.s-due_soon{border-left-color:var(--soon)}     .s-on_track{border-left-color:var(--ontrack)}
+.s-not_started{border-left-color:var(--idle)}
+.s-backlog{border-left-color:var(--idle);opacity:.75}
+.s-no_report{border-left-color:var(--idle);opacity:.6}
+.s-done{border-left-color:var(--ontrack);opacity:.55}
+
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;
+  border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.p-overdue{background:var(--overdue-bg);color:var(--overdue)}
+.p-due_today{background:var(--today-bg);color:var(--today)}
+.p-due_soon{background:var(--soon-bg);color:var(--soon)}
+.p-on_track{background:var(--ontrack-bg);color:var(--ontrack)}
+.p-not_started{background:var(--idle-bg);color:var(--idle)}
+.p-done{background:var(--ontrack-bg);color:var(--ontrack)}
+.p-backlog{background:var(--idle-bg);color:var(--idle)}
+.p-no_report{background:var(--idle-bg);color:var(--idle)}
+
+.sub{color:var(--muted);font-size:12px}
+.mono{font-variant-numeric:tabular-nums}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.dash{color:var(--muted)}
+.copy{border:0;background:transparent;color:var(--muted);padding:2px 5px;
+  font-size:12px;border-radius:5px}
+.copy:hover{background:var(--idle-bg);color:var(--accent)}
+
+.empty{padding:56px 20px;text-align:center}
+.empty .big{font-size:22px;font-weight:700;margin-bottom:6px}
+footer{display:flex;gap:14px;align-items:center;margin-top:12px;
+  font-size:13px;color:var(--muted);flex-wrap:wrap}
+
+.setup{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:22px 24px;max-width:760px}
+.setup ol{padding-left:20px;line-height:1.7}
+.setup code{background:var(--idle-bg);padding:2px 6px;border-radius:5px;
+  font-size:13px;font-family:Consolas,monospace}
+.setup .path{word-break:break-all}
+
+/* Privacy screen: blanks the table when the workstation is left unattended. */
+#screen{position:fixed;inset:0;background:var(--bg);z-index:50;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#screen .big{font-size:20px;font-weight:700}
+
+/* "Which referral types need a report" panel */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:10px 14px;margin-bottom:12px}
+.panel summary{cursor:pointer;font-weight:600;font-size:14px}
+.panel[open] summary{margin-bottom:8px}
+.panel .sub{margin:6px 0 10px;max-width:70ch}
+#reporttypes{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px}
+#reporttypes label{display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+#reporttypes .n{color:var(--muted);font-size:12px}
+
+/* Active-filter bar. Deliberately tinted rather than neutral: it has to read as
+   "you are not seeing everything", which is the whole point of it existing. */
+.filterbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--warn-line);
+  border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13.5px}
+.filterbar .chip{display:inline-flex;align-items:center;gap:6px;
+  background:var(--panel);color:var(--ink);border:1px solid var(--line);
+  border-radius:999px;padding:2px 6px 2px 10px;font-size:13px}
+.filterbar .chip button{border:0;background:transparent;color:var(--muted);
+  cursor:pointer;font-size:15px;line-height:1;padding:0 4px;border-radius:50%}
+.filterbar .chip button:hover{background:var(--idle-bg);color:var(--overdue)}
+.filterbar .clearall{margin-left:auto;font-weight:600}
+
+/* Therapist picker. A real <select> so the whole list can be browsed; an
+   <input list=...> looked tidier but browsers filter its suggestions against
+   the current value, which hid everyone but the person already chosen. */
+#me{min-width:200px;max-width:280px}
+#me-other{min-width:210px}
+#me-note{max-width:300px}
+
+/* Patient name links to the patient; the rest of the row opens the session. */
+a.subject{color:var(--ink);font-weight:700;text-decoration:none}
+a.subject:hover{color:var(--accent);text-decoration:underline}
+a.subject:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
