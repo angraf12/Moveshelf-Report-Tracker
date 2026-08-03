@@ -413,6 +413,93 @@ a much larger unsigned binary, which makes the deployment problem in §8 harder,
 are the risk most likely to actually stop this project. The local server keeps PHI in memory, adds no
 new file on disk, and reuses a browser the PTs already view this same data in.
 
+**Export to Excel. Approved 2026-07-30, reversing the decision of 2026-07-27.**
+
+The original position was that the app would have no export at all, on the grounds that a
+file on disk is PHI outside the app's control. Users asked for it, and Ross Chafetz
+approved it for clinical use on 2026-07-30. The feature exists, and this section says so
+rather than leaving a comfortable but false claim in place.
+
+Three controls make it defensible:
+
+- **It exports only the rows currently visible.** Filter to one therapist or one status
+  and that is exactly what you get. There is no "export everything" that quietly includes
+  rows the user never looked at.
+- **Every export is audited.** `logs/access.jsonl` gains an `export` record with the row
+  count and file name. The rows themselves are never written to the log. This matters:
+  export is now the one route by which patient data leaves the app, so it is the one
+  route that most needs a trail.
+- **CSV formula injection is neutered.** Excel executes a cell beginning with `=`, `+`,
+  `-` or `@`. Any such value is prefixed with an apostrophe, which Excel strips on
+  display. Without this, a crafted free-text field could run when the file is opened.
+
+Two honest limitations to state rather than discover later. The file is written by the
+browser, so it lands wherever the browser saves downloads, and the app has no control over
+it afterwards. And Excel will still reformat a long numeric MRN in its own way; the export
+is a working file, not a system of record.
+
+**Printing** remains unimplemented, but as noted before, Ctrl+P and Ctrl+S always exist in
+a browser. Describe the position as "the application provides an audited export and no
+print function" rather than claiming anything is prevented.
+
+## 8. Risks, and what to do about them## 8. Risks, and what to do about them
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| **Unsigned .exe blocked by SmartScreen or hospital AV** | The app never reaches a single PT | The largest deployment risk by far, and not a coding problem. Needs an answer before build: is there an IT path to a signed binary or an approved software distribution channel? Fallback is a documented "More info, Run anyway" click-through, which some managed machines disable outright. **Raise with IT early.** |
+| API key is a PHI-bearing credential stored in plain text next to the exe | Credential leak | README states plainly: do not put the exe folder on a network drive, do not email the key, each PT generates their own. Key is never logged, never sent anywhere but Moveshelf, never written into exports. |
+| Patient names and MRNs on screen and in CSV exports | PHI exposure | No caching of session data to disk by default. Exports go to a location the user picks, with a filename that flags it as containing PHI. Screen data lives in memory only. |
+| Untracked access to patient data | Audit gap | The research app's rule is that no path to patient data bypasses the audit trail. This app follows it: every query appends an `api_fetch` record to its own `logs/access.jsonl` next to the exe, with operator, project, session count, duration, and status, and never patient identifiers. Best effort, so an unwritable folder degrades to no logging rather than a crash. |
+| Wrong "done" field, so rows stay red after the work is finished | Users stop trusting it | `pt_evaluation_date` is the confirmed marker, but the rule lives in one config setting so it can change without a rebuild. |
+| Therapist name variants hide a PT's own work | Missed deadlines, the exact failure mode this app prevents | `therapists.csv` normalizing, generated pre-filled, with raw spellings still visible on hover. |
+| Malformed dates in source data | Crash or nonsense math | Every parse is defensive and returns null on failure. A row with an unparseable date renders as "unknown" and sorts to the Not started bucket rather than taking the app down. |
+| Clock skew and time zones | Off-by-one on due dates | Session dates arrive as UTC midnight. All comparisons use local calendar dates only, never wall-clock times. |
+
+## 9. Security and compliance posture
+
+Nothing here is a substitute for review by the Shriners privacy and security office, which almost
+certainly must approve any new application that touches PHI regardless of how it is built. See the
+first open question in §11. What follows is the technical posture that review will ask about.
+
+**What is true of this design regardless of the interface choice**
+
+- **No new vendor and no new data flow.** The only network destination is the Moveshelf API, which the
+  site already uses under its existing agreement. No analytics, no telemetry, no error reporting
+  service, no CDN. The page loads zero external resources, so it works with the network cable
+  unplugged apart from the initial fetch.
+- **Read-only.** The app never writes to Moveshelf.
+- **Minimum necessary.** The query is scoped to one site and a rolling window (default 90 days), and
+  requests only the eight fields shown plus the identifiers needed to display and link a row.
+- **Nothing persists by default.** Session data lives in memory for the life of the process. The only
+  files written next to the exe are `settings.json`, `therapists.csv`, `holidays.txt`, and
+  `logs/access.jsonl`, none of which contain patient identifiers.
+- **Audited.** Every fetch appends an access record (operator, project, session count, duration,
+  status) to `logs/access.jsonl`, with no patient identifiers in it.
+- **The API key is the real credential risk**, and it is independent of the UI. Plain text next to the
+  exe means anyone who can read that folder can impersonate that PT against Moveshelf. Mitigations:
+  each PT generates their own key, the folder is local and never a network or synced drive, and the key
+  is encrypted at rest with Windows DPAPI so that only that Windows user account can decrypt it. The
+  key is never logged, never displayed after entry, and never written into an export.
+
+**What the browser specifically adds, and how each is handled**
+
+| Browser-specific risk | Handling |
+|---|---|
+| Any local process running as that user could connect to the server port | Every request requires a random per-run bearer token. The exe opens the browser once with the token in the URL, the server sets it as an `HttpOnly`, `SameSite=Strict` cookie, then redirects to a clean URL. Without the token the server returns 401 and serves nothing. |
+| A malicious website could reach `127.0.0.1` via DNS rebinding, which defeats plain CORS | The server rejects any request whose `Host` header is not `127.0.0.1:<port>` or `localhost:<port>`. A rebinding attack carries the attacker's domain in `Host` and is refused. CORS is set to deny all origins, and the port is randomized per run. |
+| The browser could write responses containing PHI to its on-disk cache | Every response carries `Cache-Control: no-store, no-cache` and `Pragma: no-cache`. Nothing is cacheable. |
+| PHI could land in browser history or in a synced browser profile | No patient identifier ever appears in a URL. All data moves in JSON response bodies. History records only `127.0.0.1:<port>`, which is not PHI, so profile sync is harmless. |
+| **Browser extensions with "read all site data" permission can read the page, including PHI** | This one has no clean technical fix, and it is the single genuine advantage a native desktop app would have. It is the item most worth raising with IT, who typically already manage extension allowlists on hospital machines. Worth noting the exposure is comparable to the PTs' existing browser use of Moveshelf itself, which displays the same patient data in the same browser. |
+| A tab left open on an unattended workstation displays PHI | The page blanks itself and requires a click to reveal after a few minutes of inactivity, and the server shuts down when the browser stops polling. Neither replaces workstation lock policy. |
+| Plain HTTP rather than HTTPS | Loopback traffic never reaches a network interface, so there is no transmission to intercept, but a checklist-driven security review may still flag the word "HTTP". Worth pre-empting in writing rather than arguing after a rejection. |
+
+**Why the browser is nonetheless the right choice here.** The static-HTML-file option is meaningfully
+worse for PHI, because it writes a file containing patient names and MRNs to disk, where it persists
+and can be picked up by OneDrive or a backup agent. The Qt option removes the extension risk but costs
+a much larger unsigned binary, which makes the deployment problem in §8 harder, and unsigned binaries
+are the risk most likely to actually stop this project. The local server keeps PHI in memory, adds no
+new file on disk, and reuses a browser the PTs already view this same data in.
+
 **No data leaves the app. Decided 2026-07-27.** There is no CSV export and no Print button. Both would
 create PHI outside the app's control, a file on disk and a piece of paper, and the conservative
 position is the one that is easiest to defend in a security review. The practical consequence is that

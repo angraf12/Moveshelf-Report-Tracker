@@ -14,8 +14,12 @@ projects created from `project-template`, which work only with de-identified dat
 
 - Read-only. It never writes to Moveshelf.
 - Local. A tiny HTTP server bound to `127.0.0.1`, rendered in the user's browser.
-- **No export. No CSV, no Print button.** Decided 2026-07-27, see PLAN.md §9. Do not add
-  one back without an explicit decision.
+- **Export to Excel (CSV), approved for clinical use by Ross Chafetz 2026-07-30.** This
+  reversed the "no export" decision of 2026-07-27. Three controls make it defensible and
+  none of them may be dropped: it exports **only the rows currently visible**, every
+  export is written to `logs/access.jsonl` (row count and filename, never the rows), and
+  values starting `=`, `+`, `-` or `@` are prefixed with an apostrophe so Excel cannot
+  execute them as formulas. See PLAN.md §9.
 - Not a research tool. No analysis, no waveforms, no Excel.
 
 ## Relationship to Moveshelf-Query-Server-Side

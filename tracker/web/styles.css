@@ -124,7 +124,10 @@ td{padding:9px 7px;border-bottom:1px solid var(--line);vertical-align:middle;
   white-space:nowrap}
 /* Referral type repeats on nearly every row and is long. Truncate it and put
    the full value in a tooltip rather than spending 180px on it. */
-td.ellipsis{max-width:150px;overflow:hidden;text-overflow:ellipsis}
+/* Referring MD and Referral type both repeat heavily and are long. Two
+   truncated columns instead of one, so each gets less room; the full value
+   is on hover. */
+td.ellipsis{max-width:104px;overflow:hidden;text-overflow:ellipsis}
 tbody tr{cursor:pointer}
 tbody tr:hover{background:var(--idle-bg)}
 .status{border-left:5px solid transparent}

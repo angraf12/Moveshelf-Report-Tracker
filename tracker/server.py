@@ -472,6 +472,16 @@ class Handler(BaseHTTPRequestHandler):
             self.state.apply_settings(self._read_json())
             self.state.refresh()
             self._json(self.state.to_payload())
+        elif path == "/api/exported":
+            # The page writes the file itself, so the rows never come back to
+            # the server. This records only that it happened.
+            data = self._read_json()
+            try:
+                n_rows = int(data.get("n_rows") or 0)
+            except (TypeError, ValueError):
+                n_rows = 0
+            self.state.access_log.log_export(n_rows, str(data.get("filename") or ""))
+            self._json({"ok": True})
         elif path == "/api/quit":
             self._json({"ok": True})
             threading.Thread(target=self.server.shutdown, daemon=True).start()

@@ -115,6 +115,8 @@ again. (The Refresh button does not clear filters. It fetches newer data.)
 - **Search** matches subject, MRN or therapist. Press `/` to jump to the box.
 - **Sort** by clicking any column heading.
 - **Refresh** re-fetches from Moveshelf. Press `r`.
+- **Export to Excel** saves exactly the rows currently shown, so filter first and you
+  export just that. Approved for clinical use.
 
 ### Deadlines and holidays
 
@@ -185,8 +187,9 @@ Do this if you think anyone else has seen your key, or when you change roles.
 - It runs **entirely on your computer**. The page is served from your own machine and is
   not reachable from the network.
 - **Patient data is never saved to disk.** It lives in memory while the app is running.
-- **There is no export.** No CSV, no print button. The only way data leaves the app is you
-  reading the screen. This is deliberate.
+- **Export to Excel** writes the rows you can see to a `.csv` file you can open in Excel.
+  It contains patient names and MRNs, so save it somewhere appropriate. Every export is
+  recorded in the app's own log (how many rows, not which).
 - Your key is **encrypted after the first successful run** so that only your Windows
   account on that computer can read it, and the plain copy is deleted.
 - `logs\access.jsonl` records that a fetch happened, with no patient details in it.

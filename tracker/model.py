@@ -45,6 +45,7 @@ KEY_PDF_TO_EMR = "sessioninfo-pdf-to-emr-date"
 KEY_INTERPRETATION = "sessioninfo-interpretation-completed"
 KEY_CANCELLATION = "sessioninfo-cancellation"
 KEY_REFERRAL_TYPE = "sessioninfo-referral-type"
+KEY_REFERRING_PHYSICIAN = "sessioninfo-referring-physician"
 KEY_EHR_ID = "ehr-id"
 
 # Live data contains "Cancelled", "No Show" and the lowercase "no show", so the
@@ -168,6 +169,7 @@ class Session:
     interpretation: Optional[date]
     cancellation: str
     referral_type: str = ""
+    referring_physician: str = ""
     patient_id: str = ""
 
     @property
@@ -220,6 +222,7 @@ def parse_session(raw_session: Dict[str, Any], project_id: str) -> Optional[Sess
         interpretation=parse_iso_date(meta.get(KEY_INTERPRETATION)),
         cancellation=_text(meta.get(KEY_CANCELLATION)),
         referral_type=_text(meta.get(KEY_REFERRAL_TYPE)),
+        referring_physician=_text(meta.get(KEY_REFERRING_PHYSICIAN)),
         patient_id=_text(patient.get("id")),
     )
 
@@ -370,6 +373,7 @@ def to_row(
         "pdf_to_emr": _iso(session.pdf_to_emr),
         "interpretation": _iso(session.interpretation),
         "referral_type": session.referral_type,
+        "referring_physician": session.referring_physician,
         "due_date": _iso(due),
         "days_left": days_left,
         "days_since_session": days_since_session,

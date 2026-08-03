@@ -146,11 +146,11 @@
           <th data-k="session_date">Session date</th>
           <th data-k="days_since_session" class="num" title="Business days between the session and today">Days Since Seen</th>
           <th data-k="therapist">Therapist</th>
+          <th data-k="referring_physician" title="Referring physician for this session">Referring MD</th>
           <th data-k="referral_type">Referral</th>
           <th data-k="processing_completed" title="Date data processing was completed. The 7 business day clock starts here.">Processed</th>
           <th data-k="days_since_processing" class="num" title="Business days between processing being completed and today. The 7 day clock starts here.">Days Since Processed</th>
           <th data-k="pt_evaluation" title="PT evaluation in EMR">PT eval</th>
-          <th data-k="pdf_to_emr" title="PDF data in EMR">PDF</th>
           <th data-k="interpretation" title="Interpretation completed">Interp.</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
@@ -164,8 +164,10 @@
 
     <footer>
       <span id="count"></span>
+      <button id="export" title="Save the rows shown below as a spreadsheet file">
+        &#8659; Export to Excel</button>
       <span class="spacer"></span>
-      <span>No export by design. Patient data stays in this window.</span>
+      <span>Exports contain patient names and MRNs. Save them somewhere appropriate.</span>
     </footer>
     <p class="sub" id="holidaynote"></p>
   </main>

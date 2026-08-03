@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 EVENT_FETCH = "api_fetch"
 EVENT_START = "app_start"
+EVENT_EXPORT = "export"
 
 
 class AccessLog:
@@ -117,6 +118,18 @@ class AccessLog:
         )
         return self._append(record)
 
+    def log_export(self, n_rows: int, filename: str = "") -> bool:
+        """Record that data was exported to a file.
+
+        Export was approved for clinical use on 2026-07-30. It is the only way
+        patient data leaves the app, so it must appear in the audit trail. The
+        row count and file name are recorded; the rows themselves never are.
+        """
+        record = self._base(EVENT_EXPORT)
+        record["n_rows"] = int(n_rows)
+        record["filename"] = str(filename)[:120]
+        return self._append(record)
+
     def read_records(self) -> List[Dict[str, Any]]:
         """Read the log back, skipping any malformed line."""
         if self.path is None or not self.path.is_file():
@@ -140,4 +153,4 @@ class AccessLog:
         return records
 
 
-__all__ = ["EVENT_FETCH", "EVENT_START", "AccessLog"]
+__all__ = ["EVENT_EXPORT", "EVENT_FETCH", "EVENT_START", "AccessLog"]

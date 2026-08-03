@@ -3,7 +3,8 @@
    Rules this file must keep, from PLAN.md section 9:
    - No patient identifier ever goes into a URL, so nothing lands in browser
      history. All data arrives in JSON response bodies.
-   - No export. There is deliberately no CSV or print affordance.
+   - Export writes patient names and MRNs to a file. Approved for clinical
+     use 2026-07-30. Every export is recorded in the access log.
    - Status is conveyed by text and symbol as well as color. */
 "use strict";
 
@@ -645,13 +646,13 @@ function renderTable() {
 
     tr.appendChild(td(row.days_since_session, "num"));
     tr.appendChild(td(row.therapist));
+    tr.appendChild(td(row.referring_physician, "ellipsis"));
     const referral = td(row.referral_type, "ellipsis");
     if (row.referral_type) referral.title = row.referral_type;
     tr.appendChild(referral);
     tr.appendChild(td(row.processing_completed, "mono"));
     tr.appendChild(td(row.days_since_processing, "num"));
     tr.appendChild(td(row.pt_evaluation, "mono"));
-    tr.appendChild(td(row.pdf_to_emr, "mono"));
     tr.appendChild(td(row.interpretation, "mono"));
     body.appendChild(tr);
   });
@@ -734,6 +735,75 @@ function wireScrollSync() {
   window.addEventListener("resize", syncScrollbars, { passive: true });
 }
 
+/* ---------- export ---------- */
+
+/* Columns written to the file, in the order they appear on screen. Kept
+   explicit rather than derived from the row object, so an internal field added
+   later is never exported by accident. */
+const EXPORT_COLUMNS = [
+  ["status", "Status"],
+  ["days_left", "Business days left"],
+  ["due_date", "Due date"],
+  ["subject_id", "Subject ID"],
+  ["mrn", "MRN"],
+  ["session_date", "Session date"],
+  ["days_since_session", "Days since seen"],
+  ["therapist", "Therapist"],
+  ["referring_physician", "Referring MD"],
+  ["referral_type", "Referral type"],
+  ["processing_completed", "Processed on"],
+  ["days_since_processing", "Days since processed"],
+  ["pt_evaluation", "PT evaluation in EMR"],
+  ["interpretation", "Interpretation"],
+  ["url", "Session link"],
+];
+
+/* Excel treats a leading =, +, - or @ as the start of a formula, so a value
+   beginning with one can execute when the file is opened. Prefix with an
+   apostrophe, which Excel strips on display. */
+function csvCell(value) {
+  let text = value === null || value === undefined ? "" : String(value);
+  if (/^[=+\-@\t\r]/.test(text)) text = "'" + text;
+  return '"' + text.replace(/"/g, '""') + '"';
+}
+
+function buildCsv(rows) {
+  const lines = [EXPORT_COLUMNS.map(([, label]) => csvCell(label)).join(",")];
+  rows.forEach((row) => {
+    lines.push(EXPORT_COLUMNS.map(([key]) => {
+      if (key === "status") return csvCell((STATUS_META[row.status] || {}).label);
+      return csvCell(row[key]);
+    }).join(","));
+  });
+  return lines.join("\r\n") + "\r\n";
+}
+
+function exportRows() {
+  const rows = visibleRows();
+  if (!rows.length) {
+    banner("Nothing to export: no sessions are currently shown.", true);
+    return;
+  }
+  // A BOM, or Excel reads accented names as mojibake.
+  const blob = new Blob(["\ufeff" + buildCsv(rows)],
+                        { type: "text/csv;charset=utf-8;" });
+  const site = (STATE.project_name || "moveshelf").replace(/[^A-Za-z0-9]+/g, "-");
+  const name = `report-tracker-${site}-${STATE.today}.csv`;
+
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+
+  // Recorded server-side: the audit trail has to cover PHI leaving the app.
+  // Row count only, never the rows themselves.
+  call("/api/exported", "POST", { n_rows: rows.length, filename: name })
+    .catch(() => {});
+}
+
 /* ---------- privacy screen ---------- */
 
 function resetIdle() {
@@ -745,6 +815,7 @@ function resetIdle() {
 
 function wire() {
   $("refresh").onclick = () => load("/api/refresh", "POST");
+  $("export").onclick = exportRows;
   $("quit").onclick = async () => {
     try { await call("/api/quit", "POST"); } catch (e) { /* server is going away */ }
     document.body.innerHTML =

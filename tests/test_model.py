@@ -251,7 +251,8 @@ class TestToRow:
         assert set(row) == {
             "session_id", "subject_id", "mrn", "session_date", "therapist",
             "therapist_raw", "processing_completed", "pt_evaluation", "pdf_to_emr",
-            "interpretation", "referral_type", "due_date", "days_left",
+            "interpretation", "referral_type", "referring_physician",
+            "due_date", "days_left",
             "days_since_session", "days_since_processing", "status", "sort_rank",
             "url", "subject_url",
         }
