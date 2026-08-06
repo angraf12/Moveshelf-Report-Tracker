@@ -201,6 +201,9 @@ function render() {
     when = stale ? `${at.toLocaleDateString()} ${clock}` : clock;
   }
   $("refreshed").textContent = `Last refreshed ${when}`;
+  // Which build this is. Nothing updates itself, so someone can sit on an old
+  // copy indefinitely; knowing which one has to be a glance, not a hunt.
+  $("version").textContent = `v${STATE.version || "?"}`;
   if (stale) {
     banner(`These counts were worked out on ${STATE.today}, not today, so every ` +
            `countdown is out of date. Refreshing now\u2026`, true);

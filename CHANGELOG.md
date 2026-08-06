@@ -7,6 +7,20 @@ usually matters more than the diff.
 
 ---
 
+## 0.2.1 — 2026-08-03
+
+### Added
+- **The version is shown in the footer.** Asked "how do I know I am viewing the
+  latest version?" and the honest answer was that you could not: the version was
+  in the payload and printed once to the console window, which people close. It
+  now reads `v0.2.1` beside the row count.
+
+  This is not cosmetic. Nothing updates itself, so a user can sit on an old build
+  indefinitely and give feedback on behaviour that was already fixed. Checking
+  which build someone is on has to be a glance, not an investigation.
+
+---
+
 ## 0.2.0 — 2026-07-30
 
 Feedback from the first round of real users.

@@ -1732,3 +1732,29 @@ class TestExport:
         assert "Nothing to export" in page.inner_text("#banners")
         page.fill("#q", "")
         page.wait_for_timeout(300)
+
+
+class TestVersionIsVisible:
+    """Asked 2026-08-03 how to tell whether the latest version is running.
+
+    The honest answer was that you could not: the version reached the page in the
+    payload and was printed once to the console window, which people close.
+    Nothing updates itself, so someone can sit on an old build indefinitely and
+    report behaviour that was fixed weeks earlier.
+    """
+
+    def test_the_footer_shows_a_version(self, live):
+        page = live["page"]
+        page.set_viewport_size({"width": 1452, "height": 820})
+        page.wait_for_timeout(300)
+        text = page.inner_text("#version")
+        assert text.startswith("v"), text
+        assert any(ch.isdigit() for ch in text), text
+
+    def test_it_matches_the_version_the_server_reports(self, live):
+        page = live["page"]
+        from tracker import __version__
+        assert page.inner_text("#version") == f"v{__version__}"
+
+    def test_it_is_on_screen_without_hunting_for_it(self, live):
+        assert live["page"].locator("#version").is_visible()
