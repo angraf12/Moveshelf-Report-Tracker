@@ -15,7 +15,9 @@ from tracker.model import (
     Session,
     Status,
     classify,
+    has_foot_model,
     is_cancellation_label,
+    multiselect_values,
     parse_session,
     parse_sessions,
     patient_metadata,
@@ -252,6 +254,7 @@ class TestToRow:
             "session_id", "subject_id", "mrn", "session_date", "therapist",
             "therapist_raw", "processing_completed", "pt_evaluation", "pdf_to_emr",
             "interpretation", "referral_type", "referring_physician",
+            "foot_model",
             "due_date", "days_left",
             "days_since_session", "days_since_processing", "status", "sort_rank",
             "url", "subject_url",
@@ -539,3 +542,69 @@ class TestSubjectLink:
     def test_the_row_has_no_subject_link_by_default(self):
         # to_row's default is off, so nothing links until it is configured.
         assert to_row(self.with_patient(), DUE, site_url=SITE)["subject_url"] == ""
+
+
+class TestFootModel:
+    """Foot model comes from the sessioninfo-data-collected multiselect.
+
+    Two traps, both found in live data on 2026-08-06:
+
+    1. The field is a dict ``{"value": [...], "multiselect": True}``, and
+       ``multiselect`` is sometimes the *string* "True". Only ``value`` is
+       dependable.
+    2. "Foot model" and "Foot pressure" are separate options. Matching on "foot"
+       counts 290 of 439 sessions; the real number is 95.
+    """
+
+    def collected(self, *options):
+        return {"sessioninfo-data-collected": {"value": list(options),
+                                               "multiselect": True}}
+
+    def test_foot_model_is_detected(self):
+        assert has_foot_model(self.collected("Trunk kinematics", "Foot model"))
+
+    def test_foot_pressure_is_not_foot_model(self):
+        # The whole reason this is an exact match rather than a substring.
+        assert not has_foot_model(self.collected("Foot pressure", "Video"))
+
+    def test_both_present_still_counts(self):
+        assert has_foot_model(self.collected("Foot model", "Foot pressure"))
+
+    def test_matching_ignores_case_and_padding(self):
+        assert has_foot_model(self.collected("  FOOT MODEL  "))
+
+    @pytest.mark.parametrize("value", [
+        {"value": [], "multiselect": True},
+        {"value": [], "multiselect": "True"},   # seen live as a string
+        {"value": None},
+        None,
+        "",
+        [],
+    ])
+    def test_empty_shapes_are_false_not_an_error(self, value):
+        assert has_foot_model({"sessioninfo-data-collected": value}) is False
+
+    def test_a_bare_list_still_works(self):
+        assert has_foot_model({"sessioninfo-data-collected": ["Foot model"]})
+
+    def test_a_bare_string_still_works(self):
+        assert has_foot_model({"sessioninfo-data-collected": "Foot model"})
+
+    def test_the_field_being_absent_is_false(self):
+        assert has_foot_model({}) is False
+
+    def test_multiselect_values_unwraps_the_dict(self):
+        assert multiselect_values({"value": ["a", "b"], "multiselect": "True"}) == ["a", "b"]
+
+    def test_multiselect_values_drops_blanks(self):
+        assert multiselect_values({"value": ["a", "", "  ", "b"]}) == ["a", "b"]
+
+    def test_it_reaches_the_parsed_session_and_the_row(self):
+        raw = raw_session(**self.collected("Foot model"))
+        session = parse_session(raw, "p")
+        assert session.foot_model is True
+        assert to_row(session, DUE)["foot_model"] is True
+
+    def test_a_session_without_one_is_false_not_missing(self):
+        row = to_row(parse_session(raw_session(), "p"), DUE)
+        assert row["foot_model"] is False

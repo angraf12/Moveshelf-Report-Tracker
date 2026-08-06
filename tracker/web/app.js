@@ -606,6 +606,7 @@ function renderTable() {
 
     // The name opens the patient; anywhere else in the row opens this session.
     const subject = document.createElement("td");
+    subject.className = "namecell";
     if (row.subject_url && row.subject_id) {
       const link = document.createElement("a");
       link.href = row.subject_url;
@@ -657,6 +658,26 @@ function renderTable() {
     tr.appendChild(td(row.days_since_processing, "num"));
     tr.appendChild(td(row.pt_evaluation, "mono"));
     tr.appendChild(td(row.interpretation, "mono"));
+
+    // Foot model last. Marked with a tick and a word in the tooltip, not colour
+    // alone, so it survives grayscale and colour vision deficiency.
+    const foot = document.createElement("td");
+    foot.className = "num";
+    if (row.foot_model) {
+      const mark = document.createElement("span");
+      mark.className = "foot";
+      mark.textContent = "\u2713";
+      mark.title = "Foot model collected: processing waits on x-ray measurements. "
+                 + "The deadline is unchanged.";
+      foot.appendChild(mark);
+      tr.classList.add("hasfoot");
+    } else {
+      const dash = document.createElement("span");
+      dash.className = "dash";
+      dash.textContent = "\u2014";
+      foot.appendChild(dash);
+    }
+    tr.appendChild(foot);
     body.appendChild(tr);
   });
 
@@ -758,6 +779,7 @@ const EXPORT_COLUMNS = [
   ["days_since_processing", "Days since processed"],
   ["pt_evaluation", "PT evaluation in EMR"],
   ["interpretation", "Interpretation"],
+  ["foot_model", "Foot model"],
   ["url", "Session link"],
 ];
 
@@ -775,6 +797,7 @@ function buildCsv(rows) {
   rows.forEach((row) => {
     lines.push(EXPORT_COLUMNS.map(([key]) => {
       if (key === "status") return csvCell((STATUS_META[row.status] || {}).label);
+      if (key === "foot_model") return csvCell(row.foot_model ? "Yes" : "");
       return csvCell(row[key]);
     }).join(","));
   });

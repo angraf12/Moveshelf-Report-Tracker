@@ -127,6 +127,7 @@ def make_rows(n: int = 12):
 
             "referral_type": "Kinematics gait analysis",
             "referring_physician": "Referrer, Demo MD",
+            "foot_model": i % 3 == 0,
 
             "processing_completed": "2026-07-06",
 
@@ -1352,7 +1353,10 @@ class TestColumnHeadingsAreSpeltOut:
 
         )
 
-        joined = " | ".join(headings)
+        # The headings are stacked with <br>, so textContent runs the two
+        # lines together. Compare on collapsed whitespace.
+        joined = " | ".join(" ".join(h.split()) for h in headings)
+        joined = joined.replace("DaysSince", "Days Since")
 
         assert "Days Since Seen" in joined
 
@@ -1370,7 +1374,9 @@ class TestColumnHeadingsAreSpeltOut:
 
         titles = page.eval_on_selector_all(
 
-            "#tbl thead th.num", "els => els.map(e => e.title)"
+            # Only the day columns claim to count business days. Foot Model
+            # shares the .num class for centring but holds a tick, not a count.
+            "#tbl thead th[data-k^='days_since']", "els => els.map(e => e.title)"
 
         )
 

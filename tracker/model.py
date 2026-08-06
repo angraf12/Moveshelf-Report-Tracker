@@ -46,6 +46,11 @@ KEY_INTERPRETATION = "sessioninfo-interpretation-completed"
 KEY_CANCELLATION = "sessioninfo-cancellation"
 KEY_REFERRAL_TYPE = "sessioninfo-referral-type"
 KEY_REFERRING_PHYSICIAN = "sessioninfo-referring-physician"
+KEY_DATA_COLLECTED = "sessioninfo-data-collected"
+
+# The exact multiselect option. Note "Foot pressure" is a *different*
+# option: matching on "foot" alone counts 290 of 439 sessions instead of 95.
+FOOT_MODEL_OPTION = "foot model"
 KEY_EHR_ID = "ehr-id"
 
 # Live data contains "Cancelled", "No Show" and the lowercase "no show", so the
@@ -147,6 +152,37 @@ def _text(value: Any) -> str:
     return str(value).strip()
 
 
+def multiselect_values(value: Any) -> List[str]:
+    """Pull the chosen options out of a Moveshelf multiselect field.
+
+    The field arrives as ``{"value": ["a", "b"], "multiselect": True}``, but
+    ``multiselect`` is sometimes the string ``"True"`` and the whole thing is
+    occasionally a bare list or string. Only ``value`` is dependable.
+
+    Returns:
+        Trimmed option strings, or [] for anything unrecognizable.
+    """
+    if isinstance(value, dict):
+        value = value.get("value")
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple)):
+        return [str(item).strip() for item in value if str(item).strip()]
+    text = str(value).strip()
+    return [text] if text else []
+
+
+def has_foot_model(meta: Dict[str, Any]) -> bool:
+    """Was a foot model collected in this session?
+
+    Foot model processing depends on x-ray measurements that can take extra days
+    to come back, so these sessions are flagged: a therapist waiting on radiology
+    is not the same as one sitting on a finished report.
+    """
+    options = multiselect_values(meta.get(KEY_DATA_COLLECTED))
+    return any(option.lower() == FOOT_MODEL_OPTION for option in options)
+
+
 def is_cancellation_label(value: Any) -> bool:
     """Does this cancellation value mean the session did not happen?"""
     text = " ".join(_text(value).lower().split())
@@ -170,6 +206,7 @@ class Session:
     cancellation: str
     referral_type: str = ""
     referring_physician: str = ""
+    foot_model: bool = False
     patient_id: str = ""
 
     @property
@@ -223,6 +260,7 @@ def parse_session(raw_session: Dict[str, Any], project_id: str) -> Optional[Sess
         cancellation=_text(meta.get(KEY_CANCELLATION)),
         referral_type=_text(meta.get(KEY_REFERRAL_TYPE)),
         referring_physician=_text(meta.get(KEY_REFERRING_PHYSICIAN)),
+        foot_model=has_foot_model(meta),
         patient_id=_text(patient.get("id")),
     )
 
@@ -374,6 +412,7 @@ def to_row(
         "interpretation": _iso(session.interpretation),
         "referral_type": session.referral_type,
         "referring_physician": session.referring_physician,
+        "foot_model": session.foot_model,
         "due_date": _iso(due),
         "days_left": days_left,
         "days_since_session": days_since_session,
@@ -454,7 +493,10 @@ __all__ = [
     "Session",
     "Status",
     "classify",
+    "FOOT_MODEL_OPTION",
+    "has_foot_model",
     "is_cancellation_label",
+    "multiselect_values",
     "parse_session",
     "parse_sessions",
     "requires_report",

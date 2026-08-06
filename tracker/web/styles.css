@@ -108,26 +108,26 @@ label.chk{display:flex;gap:6px;align-items:center;font-size:14px;
 .hbar{scrollbar-color:var(--muted) var(--idle-bg)}
 table{border-collapse:collapse;font-size:14px;width:max-content;min-width:100%}
 th{position:sticky;top:0;z-index:1;background:var(--panel);text-align:left;
-  padding:10px 7px;border-bottom:2px solid var(--line);font-size:12px;
+  padding:10px 6px;border-bottom:2px solid var(--line);font-size:12px;
   text-transform:uppercase;letter-spacing:.5px;color:var(--muted);
   cursor:pointer;white-space:nowrap;user-select:none}
 th:hover{color:var(--ink)}
 /* Let the two count headings wrap onto a second line. Spelled out in full they
    are much clearer, and wrapping keeps the columns themselves narrow so the
    whole table still fits on a laptop screen without scrolling. */
-th.num{white-space:normal;max-width:82px}
+th.num{white-space:normal;max-width:74px;text-align:center}
 
 /* Says whose numbers the tiles are showing. */
 .scope{margin:0 0 8px;font-size:13.5px;color:var(--muted)}
 .scope b{color:var(--ink)}
-td{padding:9px 7px;border-bottom:1px solid var(--line);vertical-align:middle;
+td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:middle;
   white-space:nowrap}
 /* Referral type repeats on nearly every row and is long. Truncate it and put
    the full value in a tooltip rather than spending 180px on it. */
 /* Referring MD and Referral type both repeat heavily and are long. Two
    truncated columns instead of one, so each gets less room; the full value
    is on hover. */
-td.ellipsis{max-width:104px;overflow:hidden;text-overflow:ellipsis}
+td.ellipsis{max-width:92px;overflow:hidden;text-overflow:ellipsis}
 tbody tr{cursor:pointer}
 tbody tr:hover{background:var(--idle-bg)}
 .status{border-left:5px solid transparent}
@@ -151,7 +151,7 @@ tbody tr:hover{background:var(--idle-bg)}
 
 .sub{color:var(--muted);font-size:12px}
 .mono{font-variant-numeric:tabular-nums}
-.num{text-align:right;font-variant-numeric:tabular-nums}
+.num{text-align:center;font-variant-numeric:tabular-nums}
 .dash{color:var(--muted)}
 .copy{border:0;background:transparent;color:var(--muted);padding:2px 5px;
   font-size:12px;border-radius:5px}
@@ -212,3 +212,21 @@ a.subject:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* Version, so anyone can tell at a glance which build they are on. Without it
    the only way to know was the console window, which people close. */
 .ver{color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Foot model. The tick is centred in its own narrow column, and the row carries
+   a faint wash so a scan down the table shows which cases are waiting on x-ray
+   measurements. The wash is deliberately weak: status colour must stay the
+   dominant signal, and the tick plus the column heading carry the meaning on
+   their own for anyone who cannot see the tint. */
+.foot{color:var(--accent);font-weight:700}
+tbody tr.hasfoot{background:rgba(11,95,165,.045)}
+tbody tr.hasfoot:hover{background:rgba(11,95,165,.09)}
+@media (prefers-color-scheme:dark){
+  tbody tr.hasfoot{background:rgba(121,184,255,.07)}
+  tbody tr.hasfoot:hover{background:rgba(121,184,255,.13)}
+}
+
+/* Patient names are unbounded: one long name used to widen the whole table and
+   push the last columns off screen. Cap it and let the full name show on hover,
+   the same treatment the other repeating text columns get. */
+td.namecell{max-width:186px;overflow:hidden;text-overflow:ellipsis}

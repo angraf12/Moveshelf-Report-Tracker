@@ -7,6 +7,49 @@ usually matters more than the diff.
 
 ---
 
+## 0.3.0 — 2026-08-06
+
+More feedback from users.
+
+### Added
+- **Foot Model column**, last in the table, ticked when a foot model was
+  collected. Those rows also carry a faint tint so a scan down the table shows
+  them. Foot model processing waits on x-ray measurements that can take extra
+  days, so a late row of this kind means something different from a late row
+  without one.
+
+  Source is the `sessioninfo-data-collected` multiselect. Two traps, both found
+  in live data and both covered by tests: the field is a **dict**
+  `{"value": [...], "multiselect": True}` where `multiselect` is sometimes the
+  string `"True"`, and **"Foot model" and "Foot pressure" are separate options**,
+  so a substring match on "foot" counts 290 of 439 sessions instead of 95.
+
+### Changed
+- **Days Since Seen** narrowed, and both Days headings now stack on two lines.
+- **Both Days columns are centred.**
+- **The Subject ID column is capped** and truncates with the full name on hover.
+  It was unbounded, so one long patient name widened the whole table and pushed
+  the last columns off screen.
+- Cell padding trimmed by a pixel. With 13 columns that is 26px across the
+  table, which was cheaper than truncating names further.
+
+Everything still fits on one screen with no sideways scrolling at 1280, 1452 and
+1920, which is checked by test rather than by eye.
+
+### Deliberately not changed
+- **The 7 business day deadline is the same for foot model cases.** The question
+  was raised and the numbers were run: across 224 kinematics sessions with a
+  completed PT evaluation, foot model cases take a median of 9 business days
+  against 7, and 43% finish inside 7 days against 52%. Two extra days would put
+  them level at 54%.
+
+  The decision on 2026-08-06 was to flag only, not to change any deadline. The
+  flag makes a late row explainable without the app quietly moving the goalposts.
+  If this is revisited, 2 extra days is the figure the data supports; 3 gives
+  61% and 5 gives 68%, which are policy choices rather than data-driven ones.
+
+---
+
 ## 0.2.1 — 2026-08-03
 
 ### Added
