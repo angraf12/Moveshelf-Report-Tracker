@@ -35,10 +35,16 @@ what it produced. It stops at the first failure and copies nothing anywhere.
 containing `{{APP_FOLDER}}` placeholders and empty screenshot boxes; the real one
 is generated. That template was once copied to the distribution folder by mistake. It
 looked completely normal in a folder listing and was useless to every user. The
-checks catch exactly that, plus an executable that was not rebuilt, and any
-credential or personal settings file that has drifted into the staging folder.
+checks catch exactly that, plus an executable that was not rebuilt, any
+credential or personal settings file that has drifted into the staging folder,
+and any exported worklist. That last one matters most: an export is a CSV of
+subject IDs and MRNs, it lands wherever your browser last saved a download, and
+nothing about its name marks it as patient data.
 
-Everything lands in `C:\Users\agraf\ReportTracker-Release`.
+Everything lands in `ReportTracker-Release` in your home directory. Set
+`REPORT_TRACKER_STAGING` to use a different folder; `release.py` and
+`docs/build_docs.py` both follow it, and the real path is deliberately not
+written down here because this repository is public.
 
 To verify without rebuilding: `python release.py --check`
 
@@ -46,11 +52,10 @@ To verify without rebuilding: `python release.py --check`
 
 ## 3. Update the distribution folder
 
-Copy the four files from the staging folder to:
-
-```
-<distribution folder>
-```
+Copy the four files from the staging folder to the distribution folder. Its path is the
+`APP_FOLDER` value in `docs/site.local.json`, which is gitignored: real server
+paths do not belong in a public repository, and it is the same file the setup
+guide is built from, so there is only one place to correct if the folder moves.
 
 - `MoveshelfReportTracker.exe`
 - `Setup Guide.html`
@@ -60,8 +65,9 @@ Copy the four files from the staging folder to:
 Then confirm the copy actually landed, rather than assuming:
 
 ```powershell
-$dist = "<distribution folder>"
-$local = "C:\Users\agraf\ReportTracker-Release"
+$dist = (Get-Content docs\site.local.json | ConvertFrom-Json).APP_FOLDER
+$local = $env:REPORT_TRACKER_STAGING
+if (-not $local) { $local = Join-Path $HOME "ReportTracker-Release" }
 foreach ($f in @("MoveshelfReportTracker.exe","Setup Guide.html","READ ME FIRST.txt","holidays.txt.example")) {
   $a = (Get-FileHash "$local\$f").Hash
   $b = (Get-FileHash "$dist\$f").Hash
@@ -70,8 +76,8 @@ foreach ($f in @("MoveshelfReportTracker.exe","Setup Guide.html","READ ME FIRST.
 ```
 
 **Never put anything else in that folder.** No key file, no `settings.json`, no
-`logs`. `release.py` checks the staging folder for these, but it cannot see the
-distribution folder.
+`logs`, and above all no exported CSV. `release.py` checks the staging folder for
+all of these, but it cannot see the distribution folder.
 
 ---
 

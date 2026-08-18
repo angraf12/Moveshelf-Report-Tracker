@@ -1,9 +1,11 @@
 """Build the therapist-facing documents for distribution.
 
-    python docs/build_docs.py
+    python docs/build_docs.py [output folder]
 
 Takes the tracked sources in ``docs/`` and writes finished copies into the folder
-you hand out. Two things happen:
+you hand out. Without an argument that folder is ``ReportTracker-Release`` in
+your home directory, or ``REPORT_TRACKER_STAGING`` if it is set. Two things
+happen:
 
 **Screenshots are embedded.** The pictures go into the HTML as base64, so the
 guide stays a single file: nothing to copy alongside it, and no broken image
@@ -32,6 +34,7 @@ from __future__ import annotations
 import base64
 import json
 import mimetypes
+import os
 import re
 import sys
 from pathlib import Path
@@ -40,7 +43,13 @@ from typing import Dict, Optional
 HERE = Path(__file__).resolve().parent
 SHOTS = HERE / "screenshots"
 SITE_LOCAL = HERE / "site.local.json"
-DEFAULT_OUT = Path(r"C:\Users\agraf\ReportTracker-Release")
+
+# Same rule as the placeholders above: this repository is public, so no
+# maintainer's home directory is written down here. release.py passes its own
+# staging folder as argv[1], so this default only applies to a standalone run.
+DEFAULT_OUT = Path(
+    os.environ.get("REPORT_TRACKER_STAGING") or Path.home() / "ReportTracker-Release"
+)
 
 # source file -> name it is given in the distributed folder
 DOCUMENTS = {

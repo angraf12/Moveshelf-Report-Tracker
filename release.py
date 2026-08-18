@@ -18,9 +18,13 @@ so nothing reaches the distribution folder without passing them.
 
 This does not copy anything to the distribution folder or push to GitHub. Those are
 deliberate, outward-facing steps; see RELEASE.md.
+
+The staging folder defaults to ``ReportTracker-Release`` in your home directory.
+Set ``REPORT_TRACKER_STAGING`` to put it somewhere else.
 """
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -28,7 +32,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-STAGING = Path(r"C:\Users\agraf\ReportTracker-Release")
+
+# Derived, never a literal path: this repository is public, so a maintainer's
+# home directory does not belong in it, and a hardcoded one silently creates a
+# junk folder for anyone else who runs this. build_docs.py resolves the same way
+# and is handed this value explicitly, so the two cannot drift apart.
+STAGING = Path(
+    os.environ.get("REPORT_TRACKER_STAGING") or Path.home() / "ReportTracker-Release"
+)
 
 EXPECTED = ["MoveshelfReportTracker.exe", "Setup Guide.html",
             "READ ME FIRST.txt", "holidays.txt.example"]
@@ -94,6 +105,18 @@ def check_outputs() -> list[str]:
         low = stray.name.lower()
         if "api" in low and "key" in low or low.endswith((".dat", ".key")):
             problems.append(f"CREDENTIAL in the staging folder: {stray.name}")
+        # An exported worklist is the one file here that would be a reportable
+        # disclosure if it were distributed, and it arrives by the most
+        # ordinary route there is: someone clicks Export and the browser saves
+        # into whichever folder it used last. Nothing else in this function
+        # would notice it, because it is not a credential and not named like a
+        # runtime file. therapists.csv is left to the named check below, which
+        # describes it correctly as staff data rather than patient data.
+        if low.endswith((".csv", ".xlsx", ".jsonl")) and low != "therapists.csv":
+            problems.append(
+                f"PATIENT DATA in the staging folder: {stray.name}. An exported "
+                f"worklist holds subject IDs and MRNs and must never be distributed."
+            )
     for stray in ("settings.json", "therapists.csv", "logs"):
         if (STAGING / stray).exists():
             problems.append(f"personal runtime file in the staging folder: {stray}")
@@ -116,7 +139,8 @@ def main() -> int:
             return 1
         if not run("executable", [sys.executable, "build.py"]):
             return 1
-        if not run("documents", [sys.executable, "docs/build_docs.py"]):
+        if not run("documents",
+                   [sys.executable, "docs/build_docs.py", str(STAGING)]):
             return 1
 
         # build.py writes to dist/; build_docs.py writes the documents. Nothing

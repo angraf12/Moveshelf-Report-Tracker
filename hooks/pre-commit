@@ -51,12 +51,23 @@ ALLOW_NAMES="$ALLOW_NAMES|Rodriguez Martinez|Last, First|Graf, Adam"
 ALLOW_CODE='Error, |Any, Dict|List, Optional|Set, Iterable|None, None|Dict, |Optional\]'
 ALLOW_CODE="$ALLOW_CODE|Day, Memorial|Day, Labor|Day, Independence|Thanksgiving, Christmas"
 
+# Invented MRNs: 9000001-9000017 in the mockup, 1234567 in the tests.
+#
+# Every entry here blinds the guard to that exact number in every future commit,
+# so it is the one list in this file that must never grow casually. Add a value
+# only if you can point at the committed file it appears in and say why it is
+# invented, and write that reason on the line above. A bare number nobody can
+# account for is indistinguishable from a real MRN that was waved through, so
+# the rule is to delete it rather than keep it. If a real identifier is what
+# tripped the guard, the fix is to remove the identifier, never to allow it.
+ALLOW_MRNS='9000[0-9]{3}|1234567'
+
 for f in $files; do
   match=$(git show ":$f" 2>/dev/null \
     | grep -nE '\b[0-9]{7}\b|"[A-Z][a-z]+, [A-Z][a-z]+"' \
     | grep -viE "$ALLOW_NAMES" \
     | grep -vE "$ALLOW_CODE" \
-    | grep -viE '9000[0-9]{3}|1234567' \
+    | grep -viE "$ALLOW_MRNS" \
     | head -5)
   if [ -n "$match" ]; then
     echo "PHI guard: possible patient or staff identifier in staged  $f"
