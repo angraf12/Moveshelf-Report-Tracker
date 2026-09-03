@@ -7,6 +7,57 @@ usually matters more than the diff.
 
 ---
 
+## 0.4.0 — 2026-09-03
+
+Asked for at the install briefing for the engineers at the other sites, the same
+morning it was delivered.
+
+### Added
+- **Return to Clinic column**, with the business days until the visit beneath
+  the date. Therapists wanted to see when a patient is next due back while
+  looking at whether the report is done, because a report that lands after the
+  return visit has missed the point of writing it.
+
+  Source is `sessioninfo-return-to-clinic`. Probed live over 119 sessions before
+  being displayed, and three findings shaped it. The field is **present on 118
+  sessions but filled on only 33**, which sounds like a mostly empty column; the
+  fill rate among sessions that **owe a report is 50%**, and it is **0% on every
+  one of the eight no-report referral types**, so the blanks fall where they do
+  not matter. It is **always ahead of the session** (minimum +7 calendar days,
+  median +49, maximum +315), so it records a scheduled return and a countdown to
+  it means something. And **1 value in 33 was unparseable**: the `0007-01-12`
+  typo that made every date parse defensive in the first place came from this
+  very field.
+
+  It is displayed and counted, never computed with. It is **not** a deadline and
+  takes no part in `classify()`, so how soon a patient is due back never changes
+  a row's status. Counted in business days, like every other number in the app,
+  chosen over calendar days knowing that an annual follow-up then reads as about
+  225.
+
+### Changed
+- **Each date now carries its own count on a second line**, so Session date,
+  Processed and Return to Clinic each occupy one column instead of two. This is
+  what made room: **12 columns now hold what would have needed 15**, and the
+  table's natural width fell from 1227px to **1146px** even with the new field
+  added. It fits a 1280px laptop screen with about 40px to spare, where before
+  it overflowed anything narrower than about 1265px.
+
+  The counts read as words rather than signed numbers: "9 d ago", "in 11 d",
+  "today". One column now counts forwards while two count backwards, and a bare
+  "-4" in a column of dates reads as an error rather than as a visit that has
+  already happened.
+
+  Rows are 6px taller as a result, 49px against 43px, which is roughly three
+  fewer rows on an 900px-high window. That was the accepted trade for fitting
+  the width on one page.
+
+- **Export gains both fields** as separate columns, `Return to clinic` and
+  `Business days to return`. A spreadsheet has no width problem, so the pairing
+  is a screen concern only.
+
+---
+
 ## 0.3.0 — 2026-08-06
 
 More feedback from users.

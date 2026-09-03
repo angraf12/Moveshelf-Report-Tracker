@@ -47,6 +47,7 @@ KEY_CANCELLATION = "sessioninfo-cancellation"
 KEY_REFERRAL_TYPE = "sessioninfo-referral-type"
 KEY_REFERRING_PHYSICIAN = "sessioninfo-referring-physician"
 KEY_DATA_COLLECTED = "sessioninfo-data-collected"
+KEY_RETURN_TO_CLINIC = "sessioninfo-return-to-clinic"
 
 # The exact multiselect option. Note "Foot pressure" is a *different*
 # option: matching on "foot" alone counts 290 of 439 sessions instead of 95.
@@ -208,6 +209,7 @@ class Session:
     referring_physician: str = ""
     foot_model: bool = False
     patient_id: str = ""
+    return_to_clinic: Optional[date] = None
 
     @property
     def is_cancelled(self) -> bool:
@@ -262,6 +264,7 @@ def parse_session(raw_session: Dict[str, Any], project_id: str) -> Optional[Sess
         referring_physician=_text(meta.get(KEY_REFERRING_PHYSICIAN)),
         foot_model=has_foot_model(meta),
         patient_id=_text(patient.get("id")),
+        return_to_clinic=parse_iso_date(meta.get(KEY_RETURN_TO_CLINIC)),
     )
 
 
@@ -375,6 +378,8 @@ def to_row(
     Returns:
         A JSON-serializable dict. Business-day counts are None when the source
         date is missing, so the page can render a dash rather than a wrong zero.
+        That covers ``days_to_return`` on the roughly half of report-owing
+        sessions that carry no return date.
     """
     status = classify(session, today, holidays, backlog_after, no_report_types)
     due = due_date(session.processing_completed, holidays) if session.clock_started else None
@@ -399,6 +404,18 @@ def to_row(
         else None
     )
 
+    # Business days, for one convention across the whole table, chosen over
+    # calendar days with the tradeoff understood: return visits at CHI-Gait run
+    # 7 to 315 calendar days out (median 49), so an annual follow-up reads as a
+    # large number. Negative once the return date has passed, the same sign
+    # convention as days_left. Not a deadline and never part of classify():
+    # nothing here changes a status bucket.
+    days_to_return = (
+        business_days_between(today, session.return_to_clinic, holidays)
+        if session.return_to_clinic
+        else None
+    )
+
     return {
         "session_id": session.session_id,
         "subject_id": session.subject_id,
@@ -417,6 +434,8 @@ def to_row(
         "days_left": days_left,
         "days_since_session": days_since_session,
         "days_since_processing": days_since_processing,
+        "return_to_clinic": _iso(session.return_to_clinic),
+        "days_to_return": days_to_return,
         "status": status.value,
         "sort_rank": STATUS_ORDER[status],
         "url": session_url(session, site_url),

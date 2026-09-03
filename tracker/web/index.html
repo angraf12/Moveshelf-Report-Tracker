@@ -143,13 +143,15 @@
           <th data-k="sort_rank">Due</th>
           <th data-k="subject_id">Subject ID</th>
           <th data-k="mrn">MRN</th>
-          <th data-k="session_date">Session date</th>
-          <th data-k="days_since_session" class="num" title="Business days between the session and today">Days Since <br>Seen</th>
+          <!-- Each date carries its own business-day count on a second line.
+               Sorting by the date sorts by the count too: they are the same
+               measurement, so one sort key serves both. -->
+          <th data-k="session_date" title="Date of the session, and the business days since it. Sorts on the date.">Session</th>
           <th data-k="therapist">Therapist</th>
           <th data-k="referring_physician" title="Referring physician for this session">Referring MD</th>
           <th data-k="referral_type">Referral</th>
-          <th data-k="processing_completed" title="Date data processing was completed. The 7 business day clock starts here.">Processed</th>
-          <th data-k="days_since_processing" class="num" title="Business days between processing being completed and today. The 7 day clock starts here.">Days Since <br>Processed</th>
+          <th data-k="processing_completed" title="Date data processing was completed, and the business days since. The 7 business day clock starts here. Sorts on the date.">Processed</th>
+          <th data-k="return_to_clinic" title="Date the patient is next due back in clinic, and the business days until then. Recorded on about half of the sessions that owe a report and blank on the rest. It is not a deadline and does not change a row&rsquo;s status. Sorts on the date.">Return to <br>Clinic</th>
           <th data-k="pt_evaluation" title="PT evaluation in EMR">PT eval</th>
           <th data-k="interpretation" title="Interpretation completed">Interp.</th>
           <th data-k="foot_model" class="num" title="A foot model was collected. Processing waits on x-ray measurements, which can take extra days to come back. The 7 business day deadline is unchanged; this is here so a late row can be understood.">Foot <br>Model</th>

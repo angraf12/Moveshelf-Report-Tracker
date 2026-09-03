@@ -1,6 +1,6 @@
 # CLAUDE.md — Agent Reference (Ground Truth)
 
-**Moveshelf Report Tracker v0.1.0** — a standalone tool that shows physical therapists which
+**Moveshelf Report Tracker v0.4.0** — a standalone tool that shows physical therapists which
 gait reports are due and how soon.
 
 Read [PLAN.md](PLAN.md) first. It holds the verified data model, the security posture, and
@@ -89,6 +89,7 @@ nested. Both are handled in `model.py` and nowhere else.
 | PDF data in EMR | `sessioninfo-pdf-to-emr-date` |
 | Interpretation completed | `sessioninfo-interpretation-completed` |
 | Referral type | `sessioninfo-referral-type` |
+| Return to clinic | `sessioninfo-return-to-clinic` |
 
 Facts that are easy to get wrong:
 
@@ -102,6 +103,11 @@ Facts that are easy to get wrong:
 - **Cancellation values include a lowercase `"no show"`.** Always compare case-folded.
 - **Live data contains impossible dates** such as `0007-01-12`. Every parse is defensive and
   returns None rather than raising.
+- **`sessioninfo-return-to-clinic` is displayed and counted, never computed with.** It is not a
+  deadline and takes no part in `classify()`. Filled on only half the sessions that owe a report
+  and on none of the no-report types, so a blank is normal rather than a fault. Always ahead of
+  the session in live data (median +49 calendar days, maximum +315), and the source of the
+  `0007-01-12` typo. See PLAN.md §3.
 
 ## The deadline math
 
@@ -135,6 +141,11 @@ Christmas Eve and Christmas Day. Nothing needs updating each year.
 Status buckets: overdue (`days_left < 0`), due today (`== 0`), due soon (`<= 2`), on track
 (3+ left), `NOT_STARTED`, no_report, backlog, done (PT evaluation filled). Done always wins,
 so a late-but-finished report stops being red.
+
+`days_to_return` uses the same counting convention and the same sign as `days_left`: positive
+means the visit is ahead, negative means it has passed. Business days were chosen over calendar
+days on 2026-09-03 for one convention across the table, knowing an annual follow-up then reads
+as roughly 225. It is the only count in the app that is not tied to a deadline.
 
 **No progress signal exists.** Verified across all 296 session metadata keys on 442 sessions:
 Moveshelf records only completed-milestone dates. There is no draft, assigned, in-progress or
@@ -191,9 +202,15 @@ Additional rules specific to this repo:
 2. **Never put a patient identifier in a URL.** It would land in browser history. All data
    moves in JSON response bodies.
 3. **Never widen what reaches the browser.** `to_row` has a test asserting its exact key set.
-4. **No real staff or patient names in committed source.** Test fixtures use synthetic names
+4. **The table must fit a 1280px screen without scrolling sideways.** Asked for 2026-07-28 and
+   again 2026-09-03. `TestColumnsFitWithoutScrolling` pins it at 1280, 1452 and 1920 against
+   deliberately wide synthetic rows. Its natural width is 1146px, so there is about 40px of
+   room. A new column almost certainly means merging or dropping an existing one: each date
+   carries its own business-day count on a second line for exactly this reason, which is why
+   there are 12 columns holding what used to need 15.
+5. **No real staff or patient names in committed source.** Test fixtures use synthetic names
    that mirror the structure of real values.
-5. **Every API fetch is audited** to `logs/access.jsonl`, best-effort, with no patient
+6. **Every API fetch is audited** to `logs/access.jsonl`, best-effort, with no patient
    identifiers. Logging must never break a fetch.
 
 ## Testing
@@ -202,12 +219,12 @@ Additional rules specific to this repo:
 python -m pytest tests/ -q
 ```
 
-286 tests, no network. The server tests run a real loopback server and assert the security
+460 tests, no network. The server tests run a real loopback server and assert the security
 controls (token, Host validation, cache headers, static-path escape) over real HTTP.
 
 ## Status
 
-**Working end to end, packaged, and verified as a frozen exe (2026-07-28).** 354 tests pass.
+**Working end to end, packaged, and verified as a frozen exe (2026-07-28).** 460 tests pass.
 
 Done: `businessdays.py`, `model.py`, `names.py`, `config.py`, `api.py`, `audit.py`,
 `server.py`, the web UI, `main.py`, scaffolding, design mockup.

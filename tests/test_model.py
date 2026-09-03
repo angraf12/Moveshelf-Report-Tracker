@@ -164,12 +164,13 @@ class TestCancellation:
         assert len(parse_sessions([raw_session(sid=""), raw_session(sid="ok")], "p")) == 1
 
 
-def session_with(processing=None, pt_eval=None):
+def session_with(processing=None, pt_eval=None, return_to_clinic=None):
     return Session(
         session_id="s", project_id="p", subject_id="Demo", mrn="1",
         session_date=date(2026, 7, 1), therapist_raw="T",
         processing_completed=processing, pt_evaluation=pt_eval,
         pdf_to_emr=None, interpretation=None, cancellation="",
+        return_to_clinic=return_to_clinic,
     )
 
 
@@ -256,9 +257,79 @@ class TestToRow:
             "interpretation", "referral_type", "referring_physician",
             "foot_model",
             "due_date", "days_left",
-            "days_since_session", "days_since_processing", "status", "sort_rank",
+            "days_since_session", "days_since_processing",
+            "return_to_clinic", "days_to_return", "status", "sort_rank",
             "url", "subject_url",
         }
+
+
+class TestReturnToClinic:
+    """The return visit date, added 2026-09-03 at the therapists' request.
+
+    Measured live at CHI-Gait the same day: present on 118 of 119 sessions but
+    filled on only 33, and 0% filled on every referral type that owes no report.
+    Always ahead of the session (minimum +7 calendar days, median +49, maximum
+    +315), so it records a scheduled return rather than a past visit.
+    """
+
+    KEY = "sessioninfo-return-to-clinic"
+
+    def test_parses_the_date(self):
+        s = parse_session(raw_session(**{self.KEY: "2026-09-18"}), "p")
+        assert s.return_to_clinic == date(2026, 9, 18)
+
+    def test_missing_field_is_none_rather_than_a_guess(self):
+        assert parse_session(raw_session(), "p").return_to_clinic is None
+
+    def test_the_impossible_date_seen_live_does_not_crash_the_row(self):
+        # "0007-01-12" came from this very field. One row must never cost a
+        # therapist the rest of their worklist.
+        s = parse_session(raw_session(**{self.KEY: "0007-01-12"}), "p")
+        assert s is not None
+        assert s.return_to_clinic is None
+
+    def test_counts_business_days_forward_to_the_visit(self):
+        # Wed 2026-07-15 to Wed 2026-07-22 is five business days.
+        row = to_row(
+            session_with(processing=MON, return_to_clinic=date(2026, 7, 22)), DUE
+        )
+        assert row["return_to_clinic"] == "2026-07-22"
+        assert row["days_to_return"] == 5
+
+    def test_the_day_of_the_visit_is_zero(self):
+        row = to_row(session_with(processing=MON, return_to_clinic=DUE), DUE)
+        assert row["days_to_return"] == 0
+
+    def test_a_visit_already_past_counts_negative(self):
+        # Same sign convention as days_left, so one reading serves both.
+        row = to_row(
+            session_with(processing=MON, return_to_clinic=date(2026, 7, 8)), DUE
+        )
+        assert row["days_to_return"] == -5
+
+    def test_no_date_leaves_the_count_empty_rather_than_zero(self):
+        # Half the report-owing rows have no return date. A 0 there would read
+        # as "due back today", which is a clinical statement the data does not
+        # support.
+        row = to_row(session_with(processing=MON), DUE)
+        assert row["return_to_clinic"] is None
+        assert row["days_to_return"] is None
+
+    def test_holidays_are_skipped_like_every_other_count(self):
+        holidays = frozenset({date(2026, 7, 17)})
+        row = to_row(
+            session_with(processing=MON, return_to_clinic=date(2026, 7, 22)),
+            DUE,
+            holidays=holidays,
+        )
+        assert row["days_to_return"] == 4
+
+    def test_the_return_visit_never_changes_the_status(self):
+        # It is a scheduling fact, not a deadline. A row that is on track stays
+        # on track however soon the patient is due back.
+        soon = session_with(processing=MON, return_to_clinic=date(2026, 7, 16))
+        none_set = session_with(processing=MON)
+        assert classify(soon, DUE) is classify(none_set, DUE)
 
 
 class TestSessionUrl:

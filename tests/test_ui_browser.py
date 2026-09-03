@@ -101,6 +101,16 @@ def set_therapist(page, name):
 
 
 
+# (date, business days from today). Blank, near, far, and already past: the four
+# shapes the return-to-clinic field takes in live CHI-Gait data.
+RETURN_VISITS = [
+    (None, None),
+    ("2026-09-18", 11),
+    ("2027-03-14", 192),
+    ("2026-06-30", -4),
+]
+
+
 def make_rows(n: int = 12):
 
     """Synthetic rows. No PHI, no network."""
@@ -144,6 +154,14 @@ def make_rows(n: int = 12):
             "days_since_session": 12,
 
             "days_since_processing": 9,
+
+            # Blank on about half the report-owing sessions in live data, so a
+            # quarter of these are blank on purpose. The 2027 date and its
+            # three-digit count are the widest this cell ever gets, which is
+            # what the layout tests below need to measure against.
+            "return_to_clinic": RETURN_VISITS[i % 4][0],
+
+            "days_to_return": RETURN_VISITS[i % 4][1],
 
             "status": "overdue" if i < 3 else "on_track",
 
@@ -487,7 +505,11 @@ class TestColumnsFitWithoutScrolling:
 
 
 
-    LAST_REQUIRED_COLUMN = "Days Since Processed"
+    # Processed carries the count the 2026-07-28 request was about, now on its
+    # own second line rather than in a column of its own. Return to Clinic was
+    # added 2026-09-03 to its right, so it is the new rightmost thing that has
+    # to survive a narrow screen.
+    REQUIRED_COLUMNS = ["Processed", "Return to Clinic"]
 
     @pytest.fixture(autouse=True)
     def realistic_rows(self, live):
@@ -539,29 +561,19 @@ class TestColumnsFitWithoutScrolling:
 
 
     @pytest.mark.parametrize("width", [1280, 1452, 1920])
-
-    def test_days_since_processing_is_visible(self, live, width):
-
+    @pytest.mark.parametrize("column", REQUIRED_COLUMNS)
+    def test_date_columns_are_visible(self, live, width, column):
         page = live["page"]
-
         page.set_viewport_size({"width": width, "height": 800})
-
         page.wait_for_timeout(400)
-
         info = self.columns(page)
-
+        wanted = " ".join(column.lower().split())
         target = [c for c in info["cols"]
-
-                  if self.LAST_REQUIRED_COLUMN.lower() in c["name"].lower()]
-
-        assert target, f"column {self.LAST_REQUIRED_COLUMN} is missing entirely"
-
+                  if wanted in " ".join(c["name"].lower().split())]
+        assert target, f"column {column} is missing entirely"
         assert target[0]["right"] <= info["edge"] + 1, (
-
-            f'"{self.LAST_REQUIRED_COLUMN}" is cut off at {width}px: ends at '
-
+            f'"{column}" is cut off at {width}px: ends at '
             f'{target[0]["right"]:.0f}, visible to {info["edge"]:.0f}'
-
         )
 
 
@@ -1335,52 +1347,84 @@ class TestTileCountsFollowTheFilter:
 
 class TestColumnHeadingsAreSpeltOut:
 
-    """Users could not tell what "Days Seen" and "Days Proc." meant."""
+    """Users could not tell what "Days Seen" and "Days Proc." meant.
 
+    Those two count columns no longer exist. Since 2026-09-03 each count sits on
+    a second line inside its own date cell, which is how Return to Clinic was
+    added without the table getting wider. The requirement is unchanged: a
+    reader must be able to tell what the number counts without being told. The
+    words now carry it, so that is what these assert.
+    """
 
-
-    def test_the_count_columns_say_what_they_count(self, live):
-
+    @pytest.fixture(autouse=True)
+    def realistic_rows(self, live):
+        live["state"].rows = make_rows()
+        live["state"].therapists = ["Dawson, Renata"]
+        live["state"].settings.my_therapist = ""
+        live["state"].settings.mine_only = False
         page = live["page"]
+        page.reload()
+        page.wait_for_selector("#tbl tbody tr", timeout=15000)
+        page.wait_for_timeout(400)
 
-        page.set_viewport_size({"width": 1452, "height": 820})
-
-        page.wait_for_timeout(300)
-
-        headings = page.eval_on_selector_all(
-
+    def headings(self, page):
+        raw = page.eval_on_selector_all(
             "#tbl thead th", "els => els.map(e => e.textContent.trim())"
-
         )
+        # Headings stack with <br>, so textContent runs the lines together.
+        return " | ".join(" ".join(h.split()) for h in raw)
 
-        # The headings are stacked with <br>, so textContent runs the two
-        # lines together. Compare on collapsed whitespace.
-        joined = " | ".join(" ".join(h.split()) for h in headings)
-        joined = joined.replace("DaysSince", "Days Since")
-
-        assert "Days Since Seen" in joined
-
-        assert "Days Since Processed" in joined
-
-        assert "Days Proc." not in joined
-
-        assert "Days Seen |" not in joined
-
-
-
-    def test_each_one_explains_itself_on_hover(self, live):
-
+    def test_no_abbreviated_count_headings_survive(self, live):
         page = live["page"]
+        page.set_viewport_size({"width": 1452, "height": 820})
+        page.wait_for_timeout(300)
+        joined = self.headings(page)
+        assert "Days Proc." not in joined
+        assert "Days Seen" not in joined
+        for expected in ("Session", "Processed", "Return to Clinic"):
+            assert expected in joined, f"{expected} missing from {joined!r}"
 
-        titles = page.eval_on_selector_all(
-
-            # Only the day columns claim to count business days. Foot Model
-            # shares the .num class for centring but holds a tick, not a count.
-            "#tbl thead th[data-k^='days_since']", "els => els.map(e => e.title)"
-
+    def test_each_count_says_its_direction_in_words(self, live):
+        # "12" alone was the old complaint. "12 d ago" and "in 11 d" say which
+        # way the number points without a legend, which matters more now that
+        # one column counts forwards and two count backwards.
+        page = live["page"]
+        page.set_viewport_size({"width": 1452, "height": 820})
+        page.wait_for_timeout(300)
+        subs = page.eval_on_selector_all(
+            "#tbl tbody td.stack .when", "els => els.map(e => e.textContent.trim())"
+        )
+        assert "12 d ago" in subs, subs        # days_since_session
+        assert "9 d ago" in subs, subs         # days_since_processing
+        assert "in 11 d" in subs, subs         # a return visit still to come
+        assert "4 d ago" in subs, subs         # a return visit already past
+        assert not [s for s in subs if s.startswith("-")], (
+            f"a bare negative count leaked into the table: {subs}"
         )
 
-        assert all("Business days" in t for t in titles), titles
+    def test_the_return_column_explains_itself_on_hover(self, live):
+        # It is blank on about half the rows that owe a report. Without saying
+        # so, a therapist reads the gaps as the tool failing to load something.
+        page = live["page"]
+        tip = page.get_attribute("#tbl thead th[data-k='return_to_clinic']", "title")
+        assert tip and "business days" in tip.lower()
+        assert "not a deadline" in tip.lower()
+
+
+
+    def test_each_date_column_explains_its_count_on_hover(self, live):
+        # The counts moved inside the date cells, so the date headers are what
+        # has to carry the explanation now. Selecting on data-k rather than a
+        # class: Foot Model holds a tick, not a count, and must not be caught.
+        page = live["page"]
+        titles = page.eval_on_selector_all(
+            "#tbl thead th[data-k='session_date'], "
+            "#tbl thead th[data-k='processing_completed'], "
+            "#tbl thead th[data-k='return_to_clinic']",
+            "els => els.map(e => e.title)",
+        )
+        assert len(titles) == 3, titles
+        assert all("business days" in title.lower() for title in titles), titles
 
 
 

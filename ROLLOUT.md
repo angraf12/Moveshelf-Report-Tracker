@@ -19,8 +19,8 @@ to show what people were actually told.
 
 ## 2026-09-03 — Install briefing for the engineers at the other sites
 
-**Scheduled, not yet delivered.** Update this entry with what actually happened,
-particularly the Windows behaviour, which is the whole reason for holding it.
+**Delivered. It went well.** The plan below is what was prepared; the outcome is
+recorded at the end of this entry.
 
 Audience: the Motion Analysis Center engineers at the other sites, who will put
 0.3.0 on their PTs' machines and then be the ones asked about it. Follows
@@ -63,6 +63,43 @@ SmartScreen wording, antivirus quarantine, outright blocks. That is still the
 largest unknown about this build and it cannot be answered from one machine. Then
 therapist-name coverage at each site, which referral types owe no report there,
 and any local holiday, Good Friday being the likely one.
+
+### What came back
+
+**The briefing was successful.** The substantive feedback was a request for two
+new columns, and it was acted on the same day and shipped as 0.4.0.
+
+**Requested: a return-to-clinic date, and the days until it.** The reasoning is
+sound and had not come up before: a report that lands after the patient has
+already been back has missed the point of writing it, so the therapists want the
+return visit visible while they are looking at whether the report is done.
+
+`sessioninfo-return-to-clinic` turned out to already exist in live data. It was
+probed over 119 sessions before being displayed rather than trusted on sight,
+and it holds up: filled on half the sessions that owe a report, filled on none
+of the no-report types, and always ahead of the session. See `CHANGELOG.md`
+0.4.0 and `PLAN.md` §3.
+
+**Requested: keep it to one page.** Two more columns would have pushed the table
+past a laptop screen. Each date now carries its own count on a second line, so
+12 columns hold what would have needed 15, and the table came out *narrower*
+than before the request: 1146px against 1227px. The cost is 6px of row height.
+
+**What the return column is not.** It is displayed and counted, never computed
+with. It does not change a row's status and it is not a second deadline. Nobody
+asked for that and inventing it would be a clinical rule this tool has no
+standing to make. If a site later wants "late relative to the return visit" to
+mean something, that is a decision for the clinical lead, not a code change.
+
+**Still open: the Windows question.** *(To be filled in.)* Whether the exe runs
+on a managed machine at the other sites is the reason the briefing was held, and
+it is not answered by the feedback above. The maintainer's own machine is
+domain-joined with Defender and runs it, but it is also the machine that built
+it, so the file carries no Mark-of-the-Web and SmartScreen was never consulted.
+That test needs a copy taken to a Desktop at another site.
+
+**Also still open:** therapist-name spellings per site, which referral types owe
+no report at each site, and any local holiday.
 
 ---
 

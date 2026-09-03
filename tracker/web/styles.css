@@ -120,8 +120,18 @@ th.num{white-space:normal;max-width:74px;text-align:center}
 /* Says whose numbers the tiles are showing. */
 .scope{margin:0 0 8px;font-size:13.5px;color:var(--muted)}
 .scope b{color:var(--ink)}
-td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:middle;
+/* 8px rather than 9: every row now carries a two-line date cell, and the pair
+   of pixels back buys most of a row on a laptop screen. */
+td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle;
   white-space:nowrap}
+
+/* A date with its business-day count stacked beneath it. Merging each date with
+   its own count turned six columns into three, which is how Return to Clinic
+   was added and the table still came out narrower than before. The second line
+   is small and muted so a column of these still scans as a column of dates. */
+td.stack{line-height:1.2}
+td.stack .when{font-size:11.5px;color:var(--muted);margin-top:1px;
+  font-variant-numeric:tabular-nums}
 /* Referral type repeats on nearly every row and is long. Truncate it and put
    the full value in a tooltip rather than spending 180px on it. */
 /* Referring MD and Referral type both repeat heavily and are long. Two

@@ -568,6 +568,49 @@ function duePhrase(row) {
   return `${meta.icon} ${row.days_left} left${suffix}`;
 }
 
+/* Business days, phrased rather than signed. A bare "-29" in a column of dates
+   reads as an error; "29 d ago" reads as a visit that has already happened. */
+function relativeDays(n) {
+  if (n === null || n === undefined) return "";
+  if (n === 0) return "today";
+  return n > 0 ? `in ${n} d` : `${-n} d ago`;
+}
+
+/* The two "since" counts measure backwards from a past date and the return
+   count measures forwards to a future one, so the sign is flipped at the call
+   site and one formatter serves all three. Guarded because -null is 0, which
+   would print "today" against a date that is missing. */
+function until(n) {
+  return n === null || n === undefined ? null : -n;
+}
+
+/* A date with its business-day count stacked beneath it. Three pairs of columns
+   became three single columns this way, which is how the return-to-clinic pair
+   was added while the table got narrower: 12 columns now against 13 before. */
+function dateCell(dateText, businessDaysUntil) {
+  const cell = document.createElement("td");
+  cell.className = "stack";
+  if (!dateText) {
+    const dash = document.createElement("span");
+    dash.className = "dash";
+    dash.textContent = "—";
+    cell.appendChild(dash);
+    return cell;
+  }
+  const top = document.createElement("div");
+  top.className = "mono";
+  top.textContent = dateText;
+  cell.appendChild(top);
+  const label = relativeDays(businessDaysUntil);
+  if (label) {
+    const sub = document.createElement("div");
+    sub.className = "when";
+    sub.textContent = label;
+    cell.appendChild(sub);
+  }
+  return cell;
+}
+
 function td(text, cls) {
   const cell = document.createElement("td");
   if (cls) cell.className = cls;
@@ -642,20 +685,18 @@ function renderTable() {
     }
     tr.appendChild(mrn);
 
-    const when = document.createElement("td");
-    when.className = "mono";
-    when.textContent = row.session_date || "—";
-    if (row.days_since_session === 0) when.title = "Seen today";
-    tr.appendChild(when);
-
-    tr.appendChild(td(row.days_since_session, "num"));
+    tr.appendChild(dateCell(row.session_date, until(row.days_since_session)));
     tr.appendChild(td(row.therapist));
     tr.appendChild(td(row.referring_physician, "ellipsis"));
     const referral = td(row.referral_type, "ellipsis");
     if (row.referral_type) referral.title = row.referral_type;
     tr.appendChild(referral);
-    tr.appendChild(td(row.processing_completed, "mono"));
-    tr.appendChild(td(row.days_since_processing, "num"));
+    tr.appendChild(
+      dateCell(row.processing_completed, until(row.days_since_processing))
+    );
+    // Blank on about half the sessions that owe a report, which is how the
+    // field is kept in live data, so a dash here is normal and not a fault.
+    tr.appendChild(dateCell(row.return_to_clinic, row.days_to_return));
     tr.appendChild(td(row.pt_evaluation, "mono"));
     tr.appendChild(td(row.interpretation, "mono"));
 
@@ -777,6 +818,8 @@ const EXPORT_COLUMNS = [
   ["referral_type", "Referral type"],
   ["processing_completed", "Processed on"],
   ["days_since_processing", "Days since processed"],
+  ["return_to_clinic", "Return to clinic"],
+  ["days_to_return", "Business days to return"],
   ["pt_evaluation", "PT evaluation in EMR"],
   ["interpretation", "Interpretation"],
   ["foot_model", "Foot model"],

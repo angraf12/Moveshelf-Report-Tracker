@@ -54,6 +54,7 @@ containing a `metadata` key holding another JSON object with the real values.
 | PT evaluation in EMR | `sessioninfo-pt-evaluation-date` | 24/67 | `YYYY-MM-DD`. **This is the done marker.** |
 | PDF data in EMR | `sessioninfo-pdf-to-emr-date` | 24/67 | `YYYY-MM-DD` |
 | Interpretation completed | `sessioninfo-interpretation-completed` | 15/67 | `YYYY-MM-DD`, see caveat below |
+| Return to clinic | `sessioninfo-return-to-clinic` | 33/119 | `YYYY-MM-DD`. Added 2026-09-03, probed separately over 119 sessions. See below |
 
 Four findings from the probe that change the design:
 
@@ -76,6 +77,24 @@ Four findings from the probe that change the design:
 
 Also observed: `sessioninfo-return-to-clinic` contained `0007-01-12`, an obvious typo. Every date
 parse must be defensive and never crash the app on bad input.
+
+**Return to clinic, probed live 2026-09-03** over 119 sessions in a 90-day window, before being
+displayed. The findings that shaped the column:
+
+- **Present on 118 of 119 sessions but filled on only 33.** Overall fill rate is a misleading 28%.
+- **50% filled among sessions that owe a report** (31 of 61), and **0% filled on every one of the
+  eight no-report referral types**. Nobody records a return visit for a research or video-only
+  session, so the blanks land where they do not matter. Kinematics gait analysis is 41% filled and
+  sports analysis 57%.
+- **Always ahead of the session**: minimum +7 calendar days, median +49, maximum +315, and not one
+  of the 32 parseable values fell before its own session date. It records a *scheduled* return, so a
+  countdown to it is meaningful.
+- **Format is `YYYY-MM-DD` on all 33**, with 1 of the 33 unparseable: the `0007-01-12` typo above
+  came from this very field.
+
+It is displayed and counted, never computed with. It is **not** a deadline and takes no part in
+`classify()`: a row's status is unchanged by how soon the patient is due back. Adding it to the
+status logic would invent a second deadline that no one at CHI-Gait has agreed to.
 
 ## 4. How this stays separate from the research app
 
