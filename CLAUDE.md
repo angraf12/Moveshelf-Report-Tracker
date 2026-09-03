@@ -5,6 +5,8 @@ gait reports are due and how soon.
 
 Read [PLAN.md](PLAN.md) first. It holds the verified data model, the security posture, and
 every decision made so far with its reasoning. This file is the short operational summary.
+[ROLLOUT.md](ROLLOUT.md) logs what was actually said to users and when, which is not always
+what the code does today.
 
 ## What this is, and what it is not
 
