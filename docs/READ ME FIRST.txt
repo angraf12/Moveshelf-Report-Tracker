@@ -1,6 +1,8 @@
 REPORT TRACKER
 ==============
 
+Version {{VERSION}}
+
 See which of your gait reports are due, and by when.
 
 

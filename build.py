@@ -21,13 +21,65 @@ Notes for whoever maintains this:
 """
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 NAME = "MoveshelfReportTracker"
+
+sys.path.insert(0, str(ROOT))
+from tracker import APP_NAME, __version__  # noqa: E402
+
+
+def version_resource(version: str) -> str:
+    """A PyInstaller version-file, so Windows itself can report the build.
+
+    Without this the executable has an empty version resource: right-click ->
+    Properties -> Details shows nothing at all, and the only way to tell which
+    build sits in the distribution folder is to run it. Asked for 2026-09-10, after an
+    afternoon spent working out which of three builds was where.
+
+    Generated from ``__version__`` rather than written by hand, because a
+    version number kept in two places is one that will eventually disagree with
+    itself.
+
+    Args:
+        version: Dotted version, e.g. "0.4.1".
+
+    Returns:
+        Version-file source in the form PyInstaller expects.
+    """
+    parts = [int(piece) for piece in version.split(".")[:3]]
+    while len(parts) < 4:
+        parts.append(0)
+    numbers = ", ".join(str(piece) for piece in parts)
+    return (
+        "VSVersionInfo(\n"
+        "  ffi=FixedFileInfo(\n"
+        f"    filevers=({numbers}),\n"
+        f"    prodvers=({numbers}),\n"
+        "    mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1,\n"
+        "    subtype=0x0, date=(0, 0)\n"
+        "  ),\n"
+        "  kids=[\n"
+        "    StringFileInfo([\n"
+        "      StringTable('040904B0', [\n"
+        f"        StringStruct('FileDescription', '{APP_NAME}'),\n"
+        f"        StringStruct('FileVersion', '{version}'),\n"
+        f"        StringStruct('InternalName', '{NAME}'),\n"
+        f"        StringStruct('OriginalFilename', '{NAME}.exe'),\n"
+        f"        StringStruct('ProductName', '{APP_NAME}'),\n"
+        f"        StringStruct('ProductVersion', '{version}'),\n"
+        "      ])\n"
+        "    ]),\n"
+        "    VarFileInfo([VarStruct('Translation', [1033, 1200])])\n"
+        "  ]\n"
+        ")\n"
+    )
 
 
 def main() -> int:
@@ -49,18 +101,28 @@ def main() -> int:
         if stale.exists():
             shutil.rmtree(stale, ignore_errors=True)
 
+    # Generated on every build from __version__, so a checked-in copy can
+    # never drift out of step with the version actually being shipped.
+    handle, version_path = tempfile.mkstemp(suffix=".txt", text=True)
+    with os.fdopen(handle, "w", encoding="utf-8") as stream:
+        stream.write(version_resource(__version__))
+
     command = [
         sys.executable, "-m", "PyInstaller",
         "--onefile",
         "--name", NAME,
         "--add-data", f"{web}{separator}web",
+        "--version-file", version_path,
         "--console",
         "--noconfirm",
         "--clean",
         str(ROOT / "main.py"),
     ]
     print("Running:\n  " + " ".join(command) + "\n")
-    result = subprocess.run(command, cwd=ROOT)
+    try:
+        result = subprocess.run(command, cwd=ROOT)
+    finally:
+        Path(version_path).unlink(missing_ok=True)
     if result.returncode != 0:
         return result.returncode
 
@@ -70,11 +132,11 @@ def main() -> int:
         return 1
 
     size_mb = exe.stat().st_size / (1024 * 1024)
-    print(f"\nBuilt {exe}  ({size_mb:.1f} MB)")
+    print(f"\nBuilt {exe}  ({size_mb:.1f} MB, version {__version__})")
     print("\nNext:")
     print("  1. Copy it into a folder holding mvshlf-api-key.json.")
     print("  2. Test it on a machine WITHOUT Python installed.")
-    print("  3. Expect a SmartScreen warning: it is unsigned.")
+    print("  3. Right-click -> Properties -> Details now shows the version.")
     return 0
 
 

@@ -41,6 +41,9 @@ from pathlib import Path
 from typing import Dict, Optional
 
 HERE = Path(__file__).resolve().parent
+
+sys.path.insert(0, str(HERE.parent))
+from tracker import __version__  # noqa: E402
 SHOTS = HERE / "screenshots"
 SITE_LOCAL = HERE / "site.local.json"
 
@@ -69,6 +72,11 @@ FALLBACKS = {
     "CONTACT": "Contact your gait lab systems engineer.",
 }
 
+# Not a site detail and never overridable from site.local.json: the version is
+# whatever is being built. Written into the handout so the distribution folder
+# says which build it holds without anyone having to run it.
+BUILT_IN = {"VERSION": __version__}
+
 SUFFIXES = (".png", ".jpg", ".jpeg")
 PLACEHOLDER = re.compile(r"\{\{([A-Z_]+)\}\}")
 
@@ -83,11 +91,13 @@ def load_site() -> Dict[str, str]:
         data = json.loads(SITE_LOCAL.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         print(f"  ! {SITE_LOCAL.name} could not be read ({exc}); using generic wording")
+        values.update(BUILT_IN)
         return values
     for key, value in data.items():
         if not key.startswith("_") and isinstance(value, str):
             values[key] = value
     print(f"  site details from {SITE_LOCAL.name}")
+    values.update(BUILT_IN)
     return values
 
 
