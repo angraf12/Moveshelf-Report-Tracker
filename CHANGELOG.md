@@ -56,6 +56,15 @@ morning it was delivered.
   `Business days to return`. A spreadsheet has no width problem, so the pairing
   is a screen concern only.
 
+- **The setup guide no longer leads with a SmartScreen warning.** Settled
+  2026-09-10: Windows does not mark the file when it is copied from the
+  distribution folder, so the prompt the guide told people to expect does not appear. The
+  advice was not wrong so much as backwards, and a therapist looking for a
+  dialog that never comes assumes they have missed a step. The guide now says a
+  warning is unlikely and keeps the "More info, then Run anyway" instructions
+  for the case where one does appear, since another site's machine image may
+  still produce it.
+
 ---
 
 ## 0.3.0 — 2026-08-06

@@ -72,6 +72,8 @@ certificate authority, which is normal for an internally built tool. Click **Mor
 then **Run anyway**. If your computer refuses outright, your IT department has blocked
 unsigned programs and will need to approve it.
 
+Most people see no warning at all. If it just starts, nothing has been skipped.
+
 ---
 
 ## Using it

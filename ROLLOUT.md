@@ -91,12 +91,19 @@ asked for that and inventing it would be a clinical rule this tool has no
 standing to make. If a site later wants "late relative to the return visit" to
 mean something, that is a decision for the clinical lead, not a code change.
 
-**Still open: the Windows question.** *(To be filled in.)* Whether the exe runs
-on a managed machine at the other sites is the reason the briefing was held, and
-it is not answered by the feedback above. The maintainer's own machine is
-domain-joined with Defender and runs it, but it is also the machine that built
-it, so the file carries no Mark-of-the-Web and SmartScreen was never consulted.
-That test needs a copy taken to a Desktop at another site.
+**The Windows question, settled 2026-09-10: no warning appears.** Windows does
+not mark the file when it is copied from the distribution folder, so SmartScreen is
+never consulted and the app simply starts. Defender on a domain-joined machine
+does not quarantine it either.
+
+This makes the instruction given on 2026-07-28 backwards. That email, and the
+setup guide with it, told people to expect "Windows protected your PC" and to
+click More info then Run anyway. A therapist waiting for a dialog that never
+appears concludes they have missed a step. The guide was corrected the same day
+this was settled: it now says a warning is unlikely, and keeps the Run anyway
+instructions for the case where one does appear, because another site's machine
+image may still be configured to produce it. Treat the absence of a warning as
+confirmed for this site's image only.
 
 **Also still open:** therapist-name spellings per site, which referral types owe
 no report at each site, and any local holiday.
