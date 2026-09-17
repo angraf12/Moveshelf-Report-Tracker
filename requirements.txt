@@ -1,14 +1,8 @@
-# Deliberately minimal. Everything here ends up inside the shipped executable,
-# and a small binary is what keeps startup fast and antivirus quiet.
-#
-# NOT used, on purpose: pandas, numpy, openpyxl, and the query_app research
-# package. See PLAN.md section 4.
+# Deliberately minimal. Everything here ends up inside the executable, and a
+# small binary is what keeps startup fast and antivirus quiet.
 
 moveshelf-api>=1.6.3
 requests>=2.31.0
 
-# Development only, not bundled into the executable.
-pytest>=7.4.0
+# Only needed to build the .exe with build.py. Not bundled into it.
 pyinstaller>=6.0.0
-# Browser tests only. After installing: python -m playwright install chromium
-playwright>=1.40.0

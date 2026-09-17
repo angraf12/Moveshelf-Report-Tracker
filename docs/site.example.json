@@ -1,5 +1,0 @@
-{
-  "_comment": "Site details injected into the guide by build_docs.py. Copy this to site.local.json and fill it in. site.local.json is gitignored, so real server paths and email addresses never enter the repository.",
-  "APP_FOLDER": "<where your site keeps the ReportTracker folder>",
-  "CONTACT": "Contact your gait lab systems engineer."
-}

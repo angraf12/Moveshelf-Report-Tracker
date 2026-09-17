@@ -16,15 +16,6 @@ mvshlf-config.json
 # The example holiday file is committed; a real one is not.
 !holidays.txt.example
 
-# The setup-guide screenshots are pictures of the Moveshelf interface, not
-# credentials. They collide with the "*api-key*" glob above, which would have
-# silently dropped api-keys.png and left the guide unbuildable from a clone.
-!docs/screenshots/*.png
-
-# Real site details (server paths, contact address) for building the guide.
-# The tracked docs hold placeholders; this fills them in locally.
-docs/site.local.json
-
 # Per-user runtime files written next to the exe. Site-specific, not code.
 settings.json
 therapists.csv
@@ -40,6 +31,15 @@ ROLLOUT.md
 CHANGELOG.md
 RELEASE.md
 CLAUDE.md
+
+# Development and release tooling: tests, internal documents, design mockup and
+# the pre-commit hook. Kept locally only; not needed to run or build the app.
+docs/
+tests/
+hooks/
+mockup/
+pytest.ini
+release.py
 
 # Anything captured from the API while developing. Assume it holds PHI.
 fixtures/live/

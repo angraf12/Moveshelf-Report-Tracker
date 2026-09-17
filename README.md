@@ -246,11 +246,3 @@ python build.py        # produces dist\MoveshelfReportTracker.exe
 Copy that file into a new local folder next to your key file and double-click it, as
 in [Setting it up](#setting-it-up-about-five-minutes-once). `dist\` is gitignored,
 which is why no `.exe` appears in the repository.
-
-**Tests and releases.**
-
-```bash
-python -m playwright install chromium   # browser tests only
-python -m pytest tests/                 # 460 tests, no network
-python release.py                       # tests, exe and documents, with checks
-```
