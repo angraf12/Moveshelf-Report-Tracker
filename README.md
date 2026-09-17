@@ -10,6 +10,21 @@ It only reads. It never changes anything in Moveshelf.
 
 ---
 
+## Getting the app
+
+**There is no `.exe` in this GitHub repository.** The repository holds the source code.
+The executable, `MoveshelfReportTracker.exe`, is built from that source and distributed
+internally. It is not committed here and not offered as a GitHub download.
+
+| You are | Where to get it |
+|---|---|
+| A therapist or engineer at a Shriners Children's Motion Analysis Center | Ask your site's motion analysis engineer for the `ReportTracker` folder. It contains the `.exe`, a `Setup Guide.html` and a `READ ME FIRST.txt`. Then follow [Setting it up](#setting-it-up-about-five-minutes-once) below. |
+| Anyone else, reading this on GitHub | Run it from source, or build the `.exe` yourself. See [Running or building from source](#running-or-building-from-source) at the end. You need your own Moveshelf API key either way. |
+
+The setup steps below are written for therapists who already have the `ReportTracker` folder.
+
+---
+
 ## Setting it up (about five minutes, once)
 
 ### 1. Get your own API key
@@ -56,7 +71,8 @@ including the key, goes into the folder it sits in.
 ### 3. Put two things in that folder
 
 - The key file you downloaded, named `mvshlf-api-key.json`
-- `MoveshelfReportTracker.exe`
+- `MoveshelfReportTracker.exe` (it is not in this GitHub repository; see
+  [Getting the app](#getting-the-app))
 
 ### 4. Double-click the app
 
@@ -200,15 +216,45 @@ Do this if you think anyone else has seen your key, or when you change roles.
 
 ---
 
-## For whoever maintains this
+## Running or building from source
 
-See [PLAN.md](PLAN.md) for the design and the reasoning behind each decision, and
-[CLAUDE.md](CLAUDE.md) for the data model and its traps.
+For developers, maintainers, and anyone evaluating the app from GitHub. You need
+Python 3 (developed on 3.12), and a Moveshelf API key file from step 1 above.
+
+**Run from source.** No executable is needed.
 
 ```bash
+git clone https://github.com/angraf12/Moveshelf-Report-Tracker.git
+cd Moveshelf-Report-Tracker
 pip install -r requirements.txt
-python -m playwright install chromium   # browser tests only
-python -m pytest tests/                 # 354 tests
-python main.py                          # run from source
-python build.py                         # produces dist/MoveshelfReportTracker.exe
+# put your mvshlf-api-key.json in this folder (it is gitignored), then:
+python main.py
 ```
+
+The key, `settings.json`, `therapists.csv` and `logs/` are all written into the
+repository folder, and all are gitignored. To keep them somewhere else, use
+`python main.py --folder <path>`. This works on macOS and Linux as well, but the key is
+only encrypted at rest on Windows. Anywhere else it stays in plain text.
+
+**Build the executable.** This needs Windows, because the build produces a Windows
+`.exe`.
+
+```bash
+python build.py        # produces dist\MoveshelfReportTracker.exe
+```
+
+Copy that file into a new local folder next to your key file and double-click it, as
+in [Setting it up](#setting-it-up-about-five-minutes-once). `dist\` is gitignored,
+which is why no `.exe` appears in the repository.
+
+**Tests and releases.**
+
+```bash
+python -m playwright install chromium   # browser tests only
+python -m pytest tests/                 # 460 tests, no network
+python release.py                       # tests, exe and documents, with checks
+```
+
+See [RELEASE.md](RELEASE.md) for the release process,
+[PLAN.md](PLAN.md) for the design and the reasoning behind each decision, and
+[CLAUDE.md](CLAUDE.md) for the data model and its traps.
