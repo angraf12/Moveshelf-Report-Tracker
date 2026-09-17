@@ -33,6 +33,9 @@ holidays.txt
 # Audit log. Contains no patient identifiers, but it is operational, not source.
 logs/
 
+# The rollout log names real people and what they were told. Kept locally only.
+ROLLOUT.md
+
 # Anything captured from the API while developing. Assume it holds PHI.
 fixtures/live/
 *.live.json

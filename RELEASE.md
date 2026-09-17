@@ -119,9 +119,9 @@ A short note works:
 > over the one in your folder, replacing it. Your key and settings stay as they
 > are. What changed: ...
 
-Then add the note to [ROLLOUT.md](ROLLOUT.md), with the date and who it went to.
-Six months on, "what did we actually tell them it does" is a question no diff can
-answer. No real server path in that file; the repository is public.
+Then add the note to `ROLLOUT.md`, with the date and who it went to. That file is
+kept locally and gitignored, so it never reaches the public repository. Six months
+on, "what did we actually tell them it does" is a question no diff can answer.
 
 ---
 
