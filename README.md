@@ -255,6 +255,5 @@ python -m pytest tests/                 # 460 tests, no network
 python release.py                       # tests, exe and documents, with checks
 ```
 
-See [RELEASE.md](RELEASE.md) for the release process,
-[PLAN.md](PLAN.md) for the design and the reasoning behind each decision, and
-[CLAUDE.md](CLAUDE.md) for the data model and its traps.
+See [RELEASE.md](RELEASE.md) for the release process, and [CLAUDE.md](CLAUDE.md) for
+the data model and its traps.

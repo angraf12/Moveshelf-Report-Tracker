@@ -33,7 +33,8 @@ holidays.txt
 # Audit log. Contains no patient identifiers, but it is operational, not source.
 logs/
 
-# The rollout log names real people and what they were told. Kept locally only.
+# Internal planning notes and the rollout log. Kept locally only.
+PLAN.md
 ROLLOUT.md
 
 # Anything captured from the API while developing. Assume it holds PHI.
